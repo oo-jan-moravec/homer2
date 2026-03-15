@@ -104,4 +104,5 @@ StyleCopReport.xml
 [Dd]ebug/
 [Rr]elease/
 publish/
+publish-out/
 *.Publish.xml

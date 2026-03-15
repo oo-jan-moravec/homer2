@@ -70,7 +70,9 @@ export class JoystickComponent implements AfterViewInit, OnDestroy {
     const y = dist > 0 ? (dy / dist) * clamped : 0;
     this.stick.set({ x, y });
 
-    const bearing = Math.round((Math.atan2(-y, x) * 180 / Math.PI + 360) % 360);
+    // Math coords: 0°=right, 90°=up. Rover expects: 0°=forward(up), 90°=right, 180°=back, 270°=left
+    const raw = (Math.atan2(-y, x) * 180 / Math.PI + 360) % 360;
+    const bearing = Math.round((450 - raw) % 360);
     const velocity = Math.round(clamped * 9);
     this.move.emit({ bearing, velocity });
   }

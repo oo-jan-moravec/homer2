@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RoverApiService } from '../../services/rover-api.service';
 import { RoverSignalRService, TelemetryData } from '../../services/rover-signalr.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
+import { batteryVoltageToPercent } from '../../utils/battery';
 
 @Component({
   selector: 'app-operator-page',
@@ -55,5 +56,10 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     if (!t) return 0;
     const avg = (Math.abs(t.velocityLeftMmps) + Math.abs(t.velocityRightMmps)) / 2;
     return Math.round(avg * 0.0036 * 10) / 10;
+  }
+
+  batteryPercent(t: TelemetryData | null): number | null {
+    if (t?.batteryVoltage == null) return null;
+    return batteryVoltageToPercent(t.batteryVoltage);
   }
 }

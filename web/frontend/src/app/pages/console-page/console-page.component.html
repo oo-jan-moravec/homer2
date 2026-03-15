@@ -38,7 +38,7 @@ RE:  {{ telemetry()!.rightEdges }}
 dist: {{ telemetry()!.distanceMm }} mm
 vL:  {{ telemetry()!.velocityLeftMmps }} mm/s
 vR:  {{ telemetry()!.velocityRightMmps }} mm/s
-bat: {{ telemetry()!.batteryVoltage | number:'1.2-2' }} V</pre>
+bat: {{ telemetry()!.batteryVoltage | number:'1.2-2' }} V ({{ batteryPercent(telemetry()) }}%)</pre>
       <pre *ngIf="!telemetry()">waiting...</pre>
     </section>
 

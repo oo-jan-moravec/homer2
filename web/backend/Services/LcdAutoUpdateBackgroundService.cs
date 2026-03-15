@@ -1,9 +1,9 @@
 namespace RoverOperatorApi.Services;
 
 /// <summary>
-/// On startup: sets LCD line1=IP, line2=voltage/mem%/temp.
+/// On startup: sets LCD line1=IP, line2=battery%/mem%/temp.
 /// Periodically updates line2 when auto-update is enabled.
-/// Format: "11.95V M56% 41C"
+/// Format: "BAT75% MEM56% 41C"
 /// </summary>
 public sealed class LcdAutoUpdateBackgroundService : BackgroundService
 {
@@ -72,11 +72,24 @@ public sealed class LcdAutoUpdateBackgroundService : BackgroundService
     private static string FormatLine2(Models.TelemetryData? telem, ISystemInfoService sysInfo)
     {
         var dto = sysInfo.GetSystemInfo();
-        var voltage = telem != null ? $"{telem.BatteryVoltage:F2}V" : "--V";
-        var mem = $"M{dto.MemoryUsedPercent}%";
+        var batPct = telem != null ? $"BAT{BatteryVoltageToPercent(telem.BatteryVoltage)}%" : "BAT--%";
+        var mem = $"MEM{dto.MemoryUsedPercent}%";
         var temp = !string.IsNullOrEmpty(dto.CpuTempC) && double.TryParse(dto.CpuTempC, out var t)
-            ? $"{(int)Math.Round(t)}C"
-            : "--C";
-        return $"{voltage} {mem} {temp}";
+            ? $"{(int)Math.Round(t)}"
+            : "--";
+        return $"{batPct} {mem} {temp}";
+    }
+
+    private static int BatteryVoltageToPercent(double v)
+    {
+        if (v >= 12.6) return 100;
+        if (v >= 12.2) return 90;
+        if (v >= 11.7) return 75;
+        if (v >= 11.3) return 60;
+        if (v >= 10.8) return 50;
+        if (v >= 10.4) return 35;
+        if (v >= 9.9) return 20;
+        if (v >= 9.45) return 10;
+        return 0;
     }
 }

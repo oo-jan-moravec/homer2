@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RoverApiService, RoverStatus, SystemInfo, TelemetryData } from '../../services/rover-api.service';
 import { RoverSignalRService } from '../../services/rover-signalr.service';
+import { batteryVoltageToPercent } from '../../utils/battery';
 
 @Component({
   selector: 'app-console-page',
@@ -111,5 +112,10 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   bearingLabel(b: number): string {
     if (b === 0) return 'FWD'; if (b === 90) return 'RT'; if (b === 180) return 'BWD'; if (b === 270) return 'LT';
     return `${b}°`;
+  }
+
+  batteryPercent(t: TelemetryData | null): number | null {
+    if (t?.batteryVoltage == null) return null;
+    return batteryVoltageToPercent(t.batteryVoltage);
   }
 }

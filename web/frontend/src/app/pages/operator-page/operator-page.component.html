@@ -9,8 +9,8 @@
     <div class="telem-overlay">
       <div class="telem-chip">
         <span class="label">BAT</span>
-        <span class="value">{{ telemetry()?.batteryVoltage != null ? (telemetry()!.batteryVoltage | number:'1.1-1') : '--' }}</span>
-        <span class="unit">V</span>
+        <span class="value">{{ batteryPercent(telemetry()) ?? '--' }}</span>
+        <span class="unit">%</span>
       </div>
       <div class="telem-chip">
         <span class="label">SPD</span>

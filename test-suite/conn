@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo CONNECTING
+
+ssh hanzzo@rpi-rover-brain4.local
+
+

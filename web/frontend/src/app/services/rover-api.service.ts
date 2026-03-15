@@ -34,6 +34,7 @@ export interface TelemetryData {
   velocityRightMmps: number;
   batteryVoltage: number;
   wifiRssiDb?: number | null;
+  pingMs?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })

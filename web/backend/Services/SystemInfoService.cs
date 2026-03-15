@@ -185,6 +185,45 @@ public class SystemInfoService : ISystemInfoService
         return parts.Length >= 2 && long.TryParse(parts[1], out var v) ? v : 0;
     }
 
+    private static readonly object PingLock = new();
+    private static int? _lastPingMs;
+    private static long _lastPingTicks;
+
+    /// <summary>Ping RTT to 8.8.8.8 in ms. Cached 2s to avoid hammering.</summary>
+    public static int? GetPingMs()
+    {
+        const int cacheMs = 2000;
+        var now = Environment.TickCount64;
+        lock (PingLock)
+        {
+            if (_lastPingMs.HasValue && now - _lastPingTicks < cacheMs)
+                return _lastPingMs;
+        }
+
+        try
+        {
+            using var ping = new Ping();
+            var reply = ping.Send("8.8.8.8", 2000);
+            if (reply.Status == IPStatus.Success)
+            {
+                var ms = (int)reply.RoundtripTime;
+                lock (PingLock)
+                {
+                    _lastPingMs = ms;
+                    _lastPingTicks = Environment.TickCount64;
+                }
+                return ms;
+            }
+        }
+        catch { }
+
+        lock (PingLock)
+        {
+            _lastPingTicks = Environment.TickCount64;
+        }
+        return _lastPingMs;
+    }
+
     /// <summary>WiFi signal strength in dBm from /proc/net/wireless. Null if unavailable.</summary>
     public static int? GetWifiRssiDb()
     {

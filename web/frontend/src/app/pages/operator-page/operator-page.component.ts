@@ -4,6 +4,7 @@ import { RoverApiService } from '../../services/rover-api.service';
 import { RoverSignalRService, TelemetryData } from '../../services/rover-signalr.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
 import { batteryVoltageToPercent } from '../../utils/battery';
+import { wifiRssiToLabel } from '../../utils/wifi';
 
 @Component({
   selector: 'app-operator-page',
@@ -61,5 +62,9 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   batteryPercent(t: TelemetryData | null): number | null {
     if (t?.batteryVoltage == null) return null;
     return batteryVoltageToPercent(t.batteryVoltage);
+  }
+
+  wifiLabel(t: TelemetryData | null): string | null {
+    return wifiRssiToLabel(t?.wifiRssiDb);
   }
 }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RoverApiService, RoverStatus, SystemInfo, TelemetryData } from '../../services/rover-api.service';
 import { RoverSignalRService } from '../../services/rover-signalr.service';
 import { batteryVoltageToPercent } from '../../utils/battery';
+import { wifiRssiToLabelAndDb } from '../../utils/wifi';
 
 @Component({
   selector: 'app-console-page',
@@ -117,5 +118,9 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   batteryPercent(t: TelemetryData | null): number | null {
     if (t?.batteryVoltage == null) return null;
     return batteryVoltageToPercent(t.batteryVoltage);
+  }
+
+  wifiDisplay(t: TelemetryData | null): string {
+    return wifiRssiToLabelAndDb(t?.wifiRssiDb);
   }
 }

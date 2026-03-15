@@ -24,8 +24,12 @@
       </div>
       <div class="telem-chip">
         <span class="label">WIFI</span>
-        <span class="value">{{ telemetry()?.wifiRssiDb != null ? telemetry()!.wifiRssiDb : '--' }}</span>
-        <span class="unit">dBm</span>
+        <span class="value">{{ wifiLabel(telemetry()) ?? '--' }}</span>
+      </div>
+      <div class="telem-chip">
+        <span class="label">PING</span>
+        <span class="value">{{ telemetry()?.pingMs != null ? telemetry()!.pingMs : '--' }}</span>
+        <span class="unit">ms</span>
       </div>
       <div class="telem-chip clickable" (click)="toggleIr()" title="Toggle IR LED">
         <span class="label">IR</span>

@@ -47,7 +47,8 @@ public sealed class TelemetryBackgroundService : BackgroundService
                 if (telem != null)
                 {
                     var wifiRssi = SystemInfoService.GetWifiRssiDb();
-                    var augmented = telem with { WifiRssiDb = wifiRssi };
+                    var pingMs = SystemInfoService.GetPingMs();
+                    var augmented = telem with { WifiRssiDb = wifiRssi, PingMs = pingMs };
                     var store = scope.ServiceProvider.GetRequiredService<ILatestTelemetryStore>();
                     store.Set(augmented);
                     await hubContext.Clients.All.SendAsync("ReceiveTelemetry", augmented, stoppingToken);

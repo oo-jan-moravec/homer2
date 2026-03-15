@@ -39,7 +39,8 @@ dist: {{ telemetry()!.distanceMm }} mm
 vL:  {{ telemetry()!.velocityLeftMmps }} mm/s
 vR:  {{ telemetry()!.velocityRightMmps }} mm/s
 bat: {{ telemetry()!.batteryVoltage | number:'1.2-2' }} V ({{ batteryPercent(telemetry()) }}%)
-wifi: {{ telemetry()!.wifiRssiDb != null ? telemetry()!.wifiRssiDb + ' dBm' : '--' }}</pre>
+wifi: {{ wifiDisplay(telemetry()) }}
+ping: {{ telemetry()!.pingMs != null ? telemetry()!.pingMs + ' ms (8.8.8.8)' : '--' }}</pre>
       <pre *ngIf="!telemetry()">waiting...</pre>
     </section>
 

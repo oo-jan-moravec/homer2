@@ -1,9 +1,9 @@
 <div class="operator">
   <div class="video-viewport">
-    <img *ngIf="camSrc()" [src]="camSrc()" alt="Rover camera" class="video-feed" />
+    <img *ngIf="camSrc()" [src]="camSrc()" alt="Rover camera" class="video-feed" (error)="onStreamError()" />
     <div class="video-placeholder" *ngIf="!camSrc()">
       <span>VIDEO FEED</span>
-      <button type="button" (click)="refreshCamera()">START STREAM</button>
+      <button type="button" (click)="retryStream()">START STREAM</button>
     </div>
 
     <div class="telem-overlay">

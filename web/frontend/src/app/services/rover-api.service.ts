@@ -76,6 +76,11 @@ export class RoverApiService {
     return `${this.base}/camera?t=${Date.now()}`;
   }
 
+  /** Live MJPEG stream URL for real-time video feed. Use as img src. */
+  getCameraStreamUrl(): string {
+    return `${this.base}/camera/stream`;
+  }
+
   resetEncoders(): Observable<void> {
     return this.http.post<void>(`${this.base}/encoders/reset`, {});
   }

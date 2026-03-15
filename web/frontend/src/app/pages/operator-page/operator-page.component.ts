@@ -23,6 +23,8 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.signalr.connect().catch(() => {});
     this.api.getStatus().subscribe({ next: s => this.irOn.set(s.irOn) });
+    // Auto-start video stream on load
+    this.camSrc.set(this.api.getCameraStreamUrl());
   }
 
   ngOnDestroy() {
@@ -37,8 +39,12 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     this.signalr.stopDrive();
   }
 
-  refreshCamera() {
-    this.camSrc.set(this.api.getCameraUrl() + '?t=' + Date.now());
+  onStreamError() {
+    this.camSrc.set(null);
+  }
+
+  retryStream() {
+    this.camSrc.set(this.api.getCameraStreamUrl());
   }
 
   toggleIr() {

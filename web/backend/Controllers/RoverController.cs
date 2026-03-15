@@ -12,6 +12,7 @@ public class RoverController : ControllerBase
     private readonly ILcdService _lcd;
     private readonly IIrService _ir;
     private readonly ICameraService _camera;
+    private readonly ICameraStreamService _cameraStream;
     private readonly ISystemInfoService _systemInfo;
     private readonly ILcdAutoUpdateService _lcdAutoUpdate;
 
@@ -20,6 +21,7 @@ public class RoverController : ControllerBase
         ILcdService lcd,
         IIrService ir,
         ICameraService camera,
+        ICameraStreamService cameraStream,
         ISystemInfoService systemInfo,
         ILcdAutoUpdateService lcdAutoUpdate)
     {
@@ -27,6 +29,7 @@ public class RoverController : ControllerBase
         _lcd = lcd;
         _ir = ir;
         _camera = camera;
+        _cameraStream = cameraStream;
         _systemInfo = systemInfo;
         _lcdAutoUpdate = lcdAutoUpdate;
     }
@@ -116,6 +119,31 @@ public class RoverController : ControllerBase
         if (bytes == null || bytes.Length == 0)
             return StatusCode(503, "Camera capture failed or not available");
         return File(bytes, "image/jpeg");
+    }
+
+    /// <summary>Live MJPEG stream. Use as img src for real-time video feed.</summary>
+    [HttpGet("camera/stream")]
+    public async Task StreamCamera(CancellationToken ct)
+    {
+        if (!_cameraStream.IsAvailable)
+        {
+            Response.StatusCode = 503;
+            await Response.WriteAsync("Camera stream not available", ct);
+            return;
+        }
+
+        Response.ContentType = "multipart/x-mixed-replace; boundary=frame";
+        Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+        Response.Headers.Pragma = "no-cache";
+
+        var body = Response.Body;
+        await foreach (var frame in _cameraStream.StreamFramesAsync(ct))
+        {
+            var header = $"\r\n--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {frame.Length}\r\n\r\n";
+            await body.WriteAsync(System.Text.Encoding.ASCII.GetBytes(header), ct);
+            await body.WriteAsync(frame, ct);
+            await body.FlushAsync(ct);
+        }
     }
 
     /// <summary>Reset encoder counters (R command).</summary>

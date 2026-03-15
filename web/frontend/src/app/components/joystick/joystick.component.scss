@@ -1,0 +1,32 @@
+$fg: #00ff41;
+$border: #1f2937;
+
+.joystick {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  touch-action: none;
+  cursor: pointer;
+
+  .base {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid $border;
+  }
+
+  .stick {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 60px;
+    height: 60px;
+    margin: -30px 0 0 -30px;
+    border-radius: 50%;
+    background: rgba($fg, 0.9);
+    border: 2px solid $fg;
+    box-shadow: 0 0 12px rgba($fg, 0.4);
+    transition: transform 0.05s ease-out;
+  }
+}

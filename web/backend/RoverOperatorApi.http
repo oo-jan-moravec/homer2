@@ -1,0 +1,6 @@
+@RoverOperatorApi_HostAddress = http://localhost:5102
+
+GET {{RoverOperatorApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

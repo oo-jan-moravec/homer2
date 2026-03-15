@@ -1,0 +1,29 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  gap: 0;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  a {
+    color: #888;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    transition: color 0.15s;
+
+    &:hover { color: #fff; }
+    &.active { color: #2a9d8f; font-weight: 500; }
+  }
+}
+
+:host {
+  display: block;
+  padding-top: 3rem;
+  min-height: 100vh;
+}

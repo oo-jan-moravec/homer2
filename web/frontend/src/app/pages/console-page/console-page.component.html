@@ -1,0 +1,92 @@
+<div class="console">
+  <header>
+    <span class="prompt">homer2&gt;</span>
+    <span class="title">ROVER TECHNICAL CONSOLE</span>
+    <span class="status" [class.online]="status()?.serialConnected">SERIAL: {{ status()?.serialConnected ? 'ON' : 'OFF' }}</span>
+    <span class="status" [class.online]="signalrConnected()">SIGNALR: {{ signalrConnected() ? 'ON' : 'OFF' }}</span>
+  </header>
+
+  <div class="grid">
+    <section class="panel status-panel">
+      <h3>STATUS</h3>
+      <pre>serial:    {{ status()?.serialConnected ? 'OK' : '--' }}
+lcd:       {{ status()?.lcdAvailable ? 'OK' : '--' }}
+ir:       {{ status()?.irAvailable ? 'OK' : '--' }} {{ status()?.irOn ? '(ON)' : '(OFF)' }}
+camera:   {{ status()?.cameraAvailable ? 'OK' : '--' }}
+ts:       {{ status()?.timestamp ?? '--' }}</pre>
+      <button type="button" (click)="refreshStatus()">REFRESH</button>
+    </section>
+
+    <section class="panel telemetry-panel">
+      <h3>TELEMETRY (LIVE)</h3>
+      <pre *ngIf="telemetry()">LE:  {{ telemetry()!.leftEdges }}
+RE:  {{ telemetry()!.rightEdges }}
+dist: {{ telemetry()!.distanceMm }} mm
+vL:  {{ telemetry()!.velocityLeftMmps }} mm/s
+vR:  {{ telemetry()!.velocityRightMmps }} mm/s
+bat: {{ telemetry()!.batteryVoltage | number:'1.2-2' }} V</pre>
+      <pre *ngIf="!telemetry()">waiting...</pre>
+    </section>
+
+    <section class="panel lcd-panel">
+      <h3>LCD</h3>
+      <input [(ngModel)]="lcdLine1" placeholder="line 1 (16ch)" maxlength="16" />
+      <input [(ngModel)]="lcdLine2" placeholder="line 2 (16ch)" maxlength="16" />
+      <div class="btns">
+        <button type="button" (click)="setLcd()">SET</button>
+        <button type="button" (click)="clearLcd()">CLEAR</button>
+      </div>
+    </section>
+
+    <section class="panel ir-panel">
+      <h3>IR LED</h3>
+      <div class="btns">
+        <button type="button" (click)="toggleIr()">TOGGLE</button>
+        <button type="button" (click)="setIr(true)">ON</button>
+        <button type="button" (click)="setIr(false)">OFF</button>
+      </div>
+    </section>
+
+    <section class="panel drive-panel">
+      <h3>DRIVE (MANUAL)</h3>
+      <div class="bearing-row">
+        <button type="button" (click)="driveBearing=0; driveVel=5; sendDrive()">^</button>
+      </div>
+      <div class="bearing-row">
+        <button type="button" (click)="driveBearing=270; driveVel=5; sendDrive()">&lt;</button>
+        <button type="button" (click)="stopDrive()">STOP</button>
+        <button type="button" (click)="driveBearing=90; driveVel=5; sendDrive()">&gt;</button>
+      </div>
+      <div class="bearing-row">
+        <button type="button" (click)="driveBearing=180; driveVel=5; sendDrive()">v</button>
+      </div>
+      <div class="vel-row">
+        <label>VEL:</label>
+        <input type="range" min="0" max="9" [(ngModel)]="driveVel" (input)="sendDrive()" />
+        <span>{{ driveVel }}</span>
+      </div>
+    </section>
+
+    <section class="panel enc-panel">
+      <h3>ENCODER CORRECTION</h3>
+      <label><input type="checkbox" [(ngModel)]="encEnabled" /> enabled</label>
+      <label>kp: <input type="number" min="1" max="100" [(ngModel)]="encKp" /></label>
+      <label>max: <input type="number" min="1" max="255" [(ngModel)]="encMax" /></label>
+      <div class="btns">
+        <button type="button" (click)="setEncConfig()">APPLY</button>
+        <button type="button" (click)="resetEncoders()">RESET ENC</button>
+      </div>
+    </section>
+
+    <section class="panel video-panel">
+      <h3>CAMERA</h3>
+      <div class="video-placeholder">
+        <img *ngIf="camSrc()" [src]="camSrc()" alt="Video" />
+        <span class="placeholder-text">VIDEO FEED<br><small>click CAPTURE</small></span>
+      </div>
+      <button type="button" (click)="refreshCamera()">CAPTURE</button>
+    </section>
+  </div>
+
+  <footer *ngIf="message()">{{ message() }}</footer>
+</div>

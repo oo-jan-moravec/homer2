@@ -1,0 +1,53 @@
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RoverApiService } from '../../services/rover-api.service';
+import { RoverSignalRService, TelemetryData } from '../../services/rover-signalr.service';
+import { JoystickComponent } from '../../components/joystick/joystick.component';
+
+@Component({
+  selector: 'app-operator-page',
+  standalone: true,
+  imports: [CommonModule, JoystickComponent],
+  templateUrl: './operator-page.component.html',
+  styleUrl: './operator-page.component.scss'
+})
+export class OperatorPageComponent implements OnInit, OnDestroy {
+  private api = inject(RoverApiService);
+  private signalr = inject(RoverSignalRService);
+
+  telemetry = this.signalr.telemetry;
+  signalrConnected = this.signalr.connected;
+  camSrc = signal<string | null>(null);
+  irOn = signal<boolean | null>(null);
+
+  ngOnInit() {
+    this.signalr.connect().catch(() => {});
+    this.api.getStatus().subscribe({ next: s => this.irOn.set(s.irOn) });
+  }
+
+  ngOnDestroy() {
+    this.signalr.stopDrive();
+  }
+
+  onJoystickMove(e: { bearing: number; velocity: number }) {
+    this.signalr.drive(e.bearing, e.velocity);
+  }
+
+  onJoystickStop() {
+    this.signalr.stopDrive();
+  }
+
+  refreshCamera() {
+    this.camSrc.set(this.api.getCameraUrl() + '?t=' + Date.now());
+  }
+
+  toggleIr() {
+    this.api.toggleIr().subscribe({ next: r => this.irOn.set(r.on) });
+  }
+
+  speedKmh(t: TelemetryData | null): number {
+    if (!t) return 0;
+    const avg = (Math.abs(t.velocityLeftMmps) + Math.abs(t.velocityRightMmps)) / 2;
+    return Math.round(avg * 0.0036 * 10) / 10;
+  }
+}

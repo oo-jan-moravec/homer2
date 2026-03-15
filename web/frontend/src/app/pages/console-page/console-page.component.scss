@@ -1,0 +1,143 @@
+@use 'sass:color';
+
+$fg: #00ff41;
+$fg-dim: #008f31;
+$bg: #0a0a0f;
+$bg-panel: #0d1117;
+$border: #1f2937;
+
+.console {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  color: $fg;
+  background: $bg;
+  min-height: calc(100vh - 3rem);
+  padding: 1rem;
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid $border;
+    margin-bottom: 1rem;
+
+    .prompt { color: $fg-dim; }
+    .title { font-weight: 700; letter-spacing: 0.1em; }
+    .status {
+      color: #666;
+      font-size: 11px;
+      &.online { color: $fg; }
+    }
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .panel {
+    background: $bg-panel;
+    border: 1px solid $border;
+    padding: 1rem;
+
+    h3 {
+      font-size: 11px;
+      color: $fg-dim;
+      letter-spacing: 0.15em;
+      margin: 0 0 0.75rem 0;
+    }
+
+    pre {
+      margin: 0 0 0.75rem 0;
+      font-size: 12px;
+      line-height: 1.5;
+      color: $fg;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      display: block;
+      width: 100%;
+      margin-bottom: 0.5rem;
+      padding: 0.35rem;
+      background: $bg;
+      border: 1px solid $border;
+      color: $fg;
+      font-family: inherit;
+      font-size: 12px;
+
+      &::placeholder { color: $fg-dim; opacity: 0.6; }
+    }
+
+    input[type="range"] {
+      width: 80px;
+      margin: 0 0.5rem;
+      accent-color: $fg;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 0.5rem;
+      accent-color: $fg;
+    }
+
+    label { display: block; margin-bottom: 0.5rem; font-size: 12px; }
+
+    .btns { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .bearing-row { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+    .vel-row { display: flex; align-items: center; margin-top: 0.5rem; font-size: 12px; }
+
+    button {
+      padding: 0.35rem 0.75rem;
+      background: $bg;
+      border: 1px solid $border;
+      color: $fg;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+
+      &:hover {
+        background: color.adjust($fg, $alpha: -0.9);
+        border-color: $fg;
+      }
+    }
+  }
+
+  .video-panel .video-placeholder {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: $bg;
+    border: 1px solid $border;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      position: relative;
+      z-index: 1;
+    }
+
+    .placeholder-text {
+      position: absolute;
+      color: $fg-dim;
+      font-size: 10px;
+      text-align: center;
+      pointer-events: none;
+    }
+  }
+
+  footer {
+    margin-top: 1rem;
+    font-size: 11px;
+    color: $fg-dim;
+  }
+}

@@ -1,0 +1,42 @@
+<div class="operator">
+  <div class="video-viewport">
+    <img *ngIf="camSrc()" [src]="camSrc()" alt="Rover camera" class="video-feed" />
+    <div class="video-placeholder" *ngIf="!camSrc()">
+      <span>VIDEO FEED</span>
+      <button type="button" (click)="refreshCamera()">START STREAM</button>
+    </div>
+
+    <div class="telem-overlay">
+      <div class="telem-chip">
+        <span class="label">BAT</span>
+        <span class="value">{{ telemetry()?.batteryVoltage != null ? (telemetry()!.batteryVoltage | number:'1.1-1') : '--' }}</span>
+        <span class="unit">V</span>
+      </div>
+      <div class="telem-chip">
+        <span class="label">SPD</span>
+        <span class="value">{{ speedKmh(telemetry()) }}</span>
+        <span class="unit">km/h</span>
+      </div>
+      <div class="telem-chip">
+        <span class="label">DIST</span>
+        <span class="value">{{ (telemetry()?.distanceMm ?? 0) / 1000 }}</span>
+        <span class="unit">m</span>
+      </div>
+      <div class="telem-chip clickable" (click)="toggleIr()" title="Toggle IR LED">
+        <span class="label">IR</span>
+        <span class="value">{{ irOn() === null ? '--' : (irOn() ? 'ON' : 'OFF') }}</span>
+      </div>
+      <div class="telem-chip status" [class.online]="signalrConnected()">
+        {{ signalrConnected() ? 'LIVE' : '---' }}
+      </div>
+    </div>
+
+    <div class="joystick-overlay">
+      <span class="label">DRIVE</span>
+      <app-joystick
+        (move)="onJoystickMove($event)"
+        (stop)="onJoystickStop()"
+      ></app-joystick>
+    </div>
+  </div>
+</div>

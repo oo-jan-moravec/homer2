@@ -1,0 +1,17 @@
+[Unit]
+Description=Rover Operator Console
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/rover-operator-console
+ExecStart=/opt/rover-operator-console/RoverOperatorApi
+Restart=always
+RestartSec=5
+Environment=ASPNETCORE_ENVIRONMENT=Production
+
+User=__SERVICE_USER__
+Group=__SERVICE_USER__
+
+[Install]
+WantedBy=multi-user.target

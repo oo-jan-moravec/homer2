@@ -17,6 +17,20 @@ ts:       {{ status()?.timestamp ?? '--' }}</pre>
       <button type="button" (click)="refreshStatus()">REFRESH</button>
     </section>
 
+    <section class="panel sysinfo-panel">
+      <h3>SYSTEM</h3>
+      <pre *ngIf="systemInfo()">host:  {{ systemInfo()!.hostname }}
+ip:    {{ (systemInfo()!.ipAddresses || []).join(', ') || '--' }}
+os:    {{ systemInfo()!.os }}
+uptime: {{ systemInfo()!.uptime }}
+cpu:   {{ systemInfo()!.cpuTempC ?? '--' }}°C ({{ systemInfo()!.cpuCores }} cores)
+load:  {{ systemInfo()!.loadAverage }}
+mem:   {{ systemInfo()!.memoryUsedMb }}/{{ systemInfo()!.memoryTotalMb }} MB
+disk:  {{ systemInfo()!.diskFreeGb ?? '--' }}/{{ systemInfo()!.diskTotalGb ?? '--' }} GB free</pre>
+      <pre *ngIf="!systemInfo()">waiting...</pre>
+      <button type="button" (click)="refreshSystemInfo()">REFRESH</button>
+    </section>
+
     <section class="panel telemetry-panel">
       <h3>TELEMETRY (LIVE)</h3>
       <pre *ngIf="telemetry()">LE:  {{ telemetry()!.leftEdges }}
@@ -30,6 +44,7 @@ bat: {{ telemetry()!.batteryVoltage | number:'1.2-2' }} V</pre>
 
     <section class="panel lcd-panel">
       <h3>LCD</h3>
+      <label><input type="checkbox" [ngModel]="lcdAutoEnabled" (ngModelChange)="onLcdAutoChange($event)" /> periodic status</label>
       <input [(ngModel)]="lcdLine1" placeholder="line 1 (16ch)" maxlength="16" />
       <input [(ngModel)]="lcdLine2" placeholder="line 2 (16ch)" maxlength="16" />
       <div class="btns">

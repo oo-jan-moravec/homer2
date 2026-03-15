@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RoverApiService, RoverStatus, TelemetryData } from '../../services/rover-api.service';
+import { RoverApiService, RoverStatus, SystemInfo, TelemetryData } from '../../services/rover-api.service';
 import { RoverSignalRService } from '../../services/rover-signalr.service';
 
 @Component({
@@ -16,11 +16,13 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   private signalr = inject(RoverSignalRService);
 
   status = signal<RoverStatus | null>(null);
+  systemInfo = signal<SystemInfo | null>(null);
   telemetry = this.signalr.telemetry;
   signalrConnected = this.signalr.connected;
 
   lcdLine1 = '';
   lcdLine2 = '';
+  lcdAutoEnabled = true;
   encEnabled = true;
   encKp = 50;
   encMax = 35;
@@ -34,6 +36,11 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
       next: s => this.status.set(s),
       error: () => this.message.set('API offline')
     });
+    this.refreshSystemInfo();
+    this.api.getLcdAutoEnabled().subscribe({
+      next: r => this.lcdAutoEnabled = r.enabled,
+      error: () => {}
+    });
     this.signalr.connect().catch(() => this.message.set('SignalR failed'));
   }
 
@@ -45,6 +52,13 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.api.getStatus().subscribe({ next: s => this.status.set(s) });
   }
 
+  refreshSystemInfo() {
+    this.api.getSystemInfo().subscribe({
+      next: s => this.systemInfo.set(s),
+      error: () => this.systemInfo.set(null)
+    });
+  }
+
   setLcd() {
     this.api.setLcd(this.lcdLine1, this.lcdLine2).subscribe({
       next: () => this.message.set('LCD updated'),
@@ -54,6 +68,14 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
 
   clearLcd() {
     this.api.clearLcd().subscribe();
+  }
+
+  onLcdAutoChange(enabled: boolean) {
+    this.lcdAutoEnabled = enabled;
+    this.api.setLcdAutoEnabled(enabled).subscribe({
+      next: r => this.lcdAutoEnabled = r.enabled,
+      error: () => this.lcdAutoEnabled = !enabled
+    });
   }
 
   toggleIr() {

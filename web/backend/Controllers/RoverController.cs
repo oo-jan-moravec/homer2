@@ -12,17 +12,30 @@ public class RoverController : ControllerBase
     private readonly ILcdService _lcd;
     private readonly IIrService _ir;
     private readonly ICameraService _camera;
+    private readonly ISystemInfoService _systemInfo;
+    private readonly ILcdAutoUpdateService _lcdAutoUpdate;
 
     public RoverController(
         IRoverSerialService serial,
         ILcdService lcd,
         IIrService ir,
-        ICameraService camera)
+        ICameraService camera,
+        ISystemInfoService systemInfo,
+        ILcdAutoUpdateService lcdAutoUpdate)
     {
         _serial = serial;
         _lcd = lcd;
         _ir = ir;
         _camera = camera;
+        _systemInfo = systemInfo;
+        _lcdAutoUpdate = lcdAutoUpdate;
+    }
+
+    /// <summary>Host system info: IP, uptime, CPU temp, memory, etc.</summary>
+    [HttpGet("sysinfo")]
+    public IActionResult GetSystemInfo()
+    {
+        return Ok(_systemInfo.GetSystemInfo());
     }
 
     /// <summary>Overall status: serial connected, hardware availability.</summary>
@@ -62,6 +75,21 @@ public class RoverController : ControllerBase
     {
         _lcd.Clear();
         return Ok();
+    }
+
+    /// <summary>Get LCD auto-update (periodic line2 refresh) enabled state.</summary>
+    [HttpGet("lcd/auto")]
+    public IActionResult GetLcdAutoEnabled()
+    {
+        return Ok(new { enabled = _lcdAutoUpdate.Enabled });
+    }
+
+    /// <summary>Set LCD auto-update enabled. When disabled, manual LCD writes work without being overwritten.</summary>
+    [HttpPost("lcd/auto")]
+    public IActionResult SetLcdAutoEnabled([FromBody] LcdAutoRequest req)
+    {
+        _lcdAutoUpdate.Enabled = req.Enabled;
+        return Ok(new { enabled = _lcdAutoUpdate.Enabled });
     }
 
     /// <summary>Set IR LED on/off.</summary>
@@ -108,4 +136,5 @@ public class RoverController : ControllerBase
 }
 
 public record LcdRequest(string? Line1, string? Line2);
+public record LcdAutoRequest(bool Enabled);
 public record IrRequest(bool On);

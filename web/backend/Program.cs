@@ -13,6 +13,10 @@ builder.Services.AddSingleton<IRoverSerialService, RoverSerialService>();
 builder.Services.AddSingleton<ILcdService, LcdService>();
 builder.Services.AddSingleton<IIrService, IrService>();
 builder.Services.AddSingleton<ICameraService, CameraService>();
+builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
+builder.Services.AddSingleton<ILatestTelemetryStore, LatestTelemetryStore>();
+builder.Services.AddSingleton<ILcdAutoUpdateService, LcdAutoUpdateService>();
+builder.Services.AddHostedService<LcdAutoUpdateBackgroundService>();
 builder.Services.AddHostedService<TelemetryBackgroundService>();
 builder.Services.AddHostedService<HeartbeatBackgroundService>();
 

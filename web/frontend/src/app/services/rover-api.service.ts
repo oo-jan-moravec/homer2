@@ -11,6 +11,21 @@ export interface RoverStatus {
   timestamp: string;
 }
 
+export interface SystemInfo {
+  hostname: string;
+  os: string;
+  ipAddresses: string[];
+  uptime: string;
+  cpuTempC: string | null;
+  cpuCores: number;
+  loadAverage: string;
+  memoryUsedMb: string;
+  memoryTotalMb: string;
+  diskFreeGb: string | null;
+  diskTotalGb: string | null;
+  memoryUsedPercent?: number;
+}
+
 export interface TelemetryData {
   leftEdges: number;
   rightEdges: number;
@@ -27,6 +42,10 @@ export class RoverApiService {
 
   getStatus(): Observable<RoverStatus> {
     return this.http.get<RoverStatus>(`${this.base}/status`);
+  }
+
+  getSystemInfo(): Observable<SystemInfo> {
+    return this.http.get<SystemInfo>(`${this.base}/sysinfo`);
   }
 
   getTelemetry(): Observable<TelemetryData> {
@@ -63,5 +82,13 @@ export class RoverApiService {
 
   setEncoderConfig(enabled: boolean, kp?: number, max?: number): Observable<void> {
     return this.http.post<void>(`${this.base}/enc`, { enabled, kp, max });
+  }
+
+  getLcdAutoEnabled(): Observable<{ enabled: boolean }> {
+    return this.http.get<{ enabled: boolean }>(`${this.base}/lcd/auto`);
+  }
+
+  setLcdAutoEnabled(enabled: boolean): Observable<{ enabled: boolean }> {
+    return this.http.post<{ enabled: boolean }>(`${this.base}/lcd/auto`, { enabled });
   }
 }

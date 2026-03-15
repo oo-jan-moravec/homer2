@@ -46,6 +46,8 @@ public sealed class TelemetryBackgroundService : BackgroundService
                 var telem = serial.RequestTelemetry(stoppingToken);
                 if (telem != null)
                 {
+                    var store = scope.ServiceProvider.GetRequiredService<ILatestTelemetryStore>();
+                    store.Set(telem);
                     await hubContext.Clients.All.SendAsync("ReceiveTelemetry", telem, stoppingToken);
                 }
             }

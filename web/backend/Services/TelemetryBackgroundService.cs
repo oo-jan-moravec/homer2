@@ -46,9 +46,11 @@ public sealed class TelemetryBackgroundService : BackgroundService
                 var telem = serial.RequestTelemetry(stoppingToken);
                 if (telem != null)
                 {
+                    var wifiRssi = SystemInfoService.GetWifiRssiDb();
+                    var augmented = telem with { WifiRssiDb = wifiRssi };
                     var store = scope.ServiceProvider.GetRequiredService<ILatestTelemetryStore>();
-                    store.Set(telem);
-                    await hubContext.Clients.All.SendAsync("ReceiveTelemetry", telem, stoppingToken);
+                    store.Set(augmented);
+                    await hubContext.Clients.All.SendAsync("ReceiveTelemetry", augmented, stoppingToken);
                 }
             }
             catch (OperationCanceledException) { break; }

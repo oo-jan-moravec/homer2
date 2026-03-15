@@ -153,7 +153,7 @@ public sealed class RoverSerialService : IRoverSerialService, IDisposable
             !long.TryParse(parts[2], out var dist) || !int.TryParse(parts[3], out var vL) ||
             !int.TryParse(parts[4], out var vR) || !double.TryParse(parts[5], out var vBat))
             return null;
-        return new TelemetryData(le, re, dist, vL, vR, vBat);
+        return new TelemetryData(le, re, dist, vL, vR, vBat, null);
     }
 
     public void Dispose() => Dispose(true);

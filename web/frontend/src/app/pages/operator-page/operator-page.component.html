@@ -22,6 +22,11 @@
         <span class="value">{{ (telemetry()?.distanceMm ?? 0) / 1000 }}</span>
         <span class="unit">m</span>
       </div>
+      <div class="telem-chip">
+        <span class="label">WIFI</span>
+        <span class="value">{{ telemetry()?.wifiRssiDb != null ? telemetry()!.wifiRssiDb : '--' }}</span>
+        <span class="unit">dBm</span>
+      </div>
       <div class="telem-chip clickable" (click)="toggleIr()" title="Toggle IR LED">
         <span class="label">IR</span>
         <span class="value">{{ irOn() === null ? '--' : (irOn() ? 'ON' : 'OFF') }}</span>

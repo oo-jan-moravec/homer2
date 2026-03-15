@@ -185,6 +185,30 @@ public class SystemInfoService : ISystemInfoService
         return parts.Length >= 2 && long.TryParse(parts[1], out var v) ? v : 0;
     }
 
+    /// <summary>WiFi signal strength in dBm from /proc/net/wireless. Null if unavailable.</summary>
+    public static int? GetWifiRssiDb()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return null;
+
+        try
+        {
+            var lines = File.ReadAllLines("/proc/net/wireless");
+            for (var i = 2; i < lines.Length; i++) // Skip 2 header lines
+            {
+                var parts = lines[i].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 4) continue;
+                // Column 4 (index 3) = level in dBm; -256 = N/A
+                var levelStr = parts[3].TrimEnd('.');
+                if (int.TryParse(levelStr, out var level) && level > -256)
+                    return level;
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
     private static (double? freeGb, double? totalGb) GetDiskInfo()
     {
         try

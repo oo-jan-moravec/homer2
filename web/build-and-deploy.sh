@@ -38,6 +38,7 @@ else
     ANGULAR_DIST="$ANGULAR_OUT"
 fi
 
+mkdir -p "$WWWROOT"
 rm -rf "$WWWROOT"/*
 cp -R "$ANGULAR_DIST"/* "$WWWROOT/"
 

@@ -106,3 +106,6 @@ StyleCopReport.xml
 publish/
 publish-out/
 *.Publish.xml
+
+# Angular → backend wwwroot (build output)
+web/backend/wwwroot/

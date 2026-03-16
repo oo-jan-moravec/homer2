@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RoverApiService } from '../../services/rover-api.service';
+import { RoverApiService, SystemInfo } from '../../services/rover-api.service';
 import { RoverSignalRService, TelemetryData } from '../../services/rover-signalr.service';
 import { SoundService } from '../../services/sound.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
@@ -24,6 +24,8 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   camSrc = signal<string | null>(null);
   irOn = signal<boolean | null>(null);
   soundAvailable = signal(false);
+  systemInfo = signal<SystemInfo | null>(null);
+  private systemInfoInterval?: ReturnType<typeof setInterval>;
 
   ngOnInit() {
     this.signalr.connect().catch(() => {});
@@ -35,12 +37,22 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     });
     // Auto-start video stream on load
     this.camSrc.set(this.api.getCameraStreamUrl());
+    this.refreshSystemInfo();
+    this.systemInfoInterval = setInterval(() => this.refreshSystemInfo(), 30_000);
   }
 
   ngOnDestroy() {
+    if (this.systemInfoInterval) clearInterval(this.systemInfoInterval);
     this.signalr.stopDrive();
     this.sound.stopMicStream();
     this.sound.stopVoiceToRover();
+  }
+
+  refreshSystemInfo() {
+    this.api.getSystemInfo().subscribe({
+      next: s => this.systemInfo.set(s),
+      error: () => this.systemInfo.set(null)
+    });
   }
 
   onJoystickMove(e: { bearing: number; velocity: number }) {
@@ -72,6 +84,11 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   batteryPercent(t: TelemetryData | null): number | null {
     if (t?.batteryVoltage == null) return null;
     return batteryVoltageToPercent(t.batteryVoltage);
+  }
+
+  memoryPercent(): number | null {
+    const info = this.systemInfo();
+    return info?.memoryUsedPercent ?? null;
   }
 
   wifiLabel(t: TelemetryData | null): string | null {

@@ -14,6 +14,11 @@
           <span class="unit">%</span>
         </div>
         <div class="telem-chip">
+          <span class="label">MEM</span>
+          <span class="value">{{ memoryPercent() ?? '--' }}</span>
+          <span class="unit">%</span>
+        </div>
+        <div class="telem-chip">
           <span class="label">SPD</span>
           <span class="value">{{ speedKmh(telemetry()) }}</span>
           <span class="unit">km/h</span>

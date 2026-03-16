@@ -14,6 +14,7 @@ builder.Services.AddSingleton<ILcdService, LcdService>();
 builder.Services.AddSingleton<IIrService, IrService>();
 builder.Services.AddSingleton<ICameraService, CameraService>();
 builder.Services.AddSingleton<ICameraStreamService, CameraStreamService>();
+builder.Services.AddSingleton<IAudioStreamService, AudioStreamService>();
 builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
 builder.Services.AddSingleton<ILatestTelemetryStore, LatestTelemetryStore>();
 builder.Services.AddSingleton<ILcdAutoUpdateService, LcdAutoUpdateService>();
@@ -37,6 +38,7 @@ app.UseStaticFiles();
 app.MapControllers();
 app.MapHub<TelemetryHub>("/hubs/telemetry");
 app.MapHub<DriveHub>("/hubs/drive");
+app.MapHub<SoundHub>("/hubs/sound");
 app.MapFallbackToFile("index.html");
 
 app.Run();

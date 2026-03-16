@@ -7,36 +7,45 @@
     </div>
 
     <div class="telem-overlay">
-      <div class="telem-chip">
-        <span class="label">BAT</span>
-        <span class="value">{{ batteryPercent(telemetry()) ?? '--' }}</span>
-        <span class="unit">%</span>
+      <div class="telem-chips">
+        <div class="telem-chip">
+          <span class="label">BAT</span>
+          <span class="value">{{ batteryPercent(telemetry()) ?? '--' }}</span>
+          <span class="unit">%</span>
+        </div>
+        <div class="telem-chip">
+          <span class="label">SPD</span>
+          <span class="value">{{ speedKmh(telemetry()) }}</span>
+          <span class="unit">km/h</span>
+        </div>
+        <div class="telem-chip">
+          <span class="label">DIST</span>
+          <span class="value">{{ (telemetry()?.distanceMm ?? 0) / 1000 }}</span>
+          <span class="unit">m</span>
+        </div>
+        <div class="telem-chip">
+          <span class="label">WIFI</span>
+          <span class="value">{{ wifiLabel(telemetry()) ?? '--' }}</span>
+        </div>
+        <div class="telem-chip">
+          <span class="label">PING</span>
+          <span class="value">{{ telemetry()?.pingMs != null ? telemetry()!.pingMs : '--' }}</span>
+          <span class="unit">ms</span>
+        </div>
       </div>
-      <div class="telem-chip">
-        <span class="label">SPD</span>
-        <span class="value">{{ speedKmh(telemetry()) }}</span>
-        <span class="unit">km/h</span>
-      </div>
-      <div class="telem-chip">
-        <span class="label">DIST</span>
-        <span class="value">{{ (telemetry()?.distanceMm ?? 0) / 1000 }}</span>
-        <span class="unit">m</span>
-      </div>
-      <div class="telem-chip">
-        <span class="label">WIFI</span>
-        <span class="value">{{ wifiLabel(telemetry()) ?? '--' }}</span>
-      </div>
-      <div class="telem-chip">
-        <span class="label">PING</span>
-        <span class="value">{{ telemetry()?.pingMs != null ? telemetry()!.pingMs : '--' }}</span>
-        <span class="unit">ms</span>
-      </div>
-      <div class="telem-chip clickable" (click)="toggleIr()" title="Toggle IR LED">
-        <span class="label">IR</span>
-        <span class="value">{{ irOn() === null ? '--' : (irOn() ? 'ON' : 'OFF') }}</span>
-      </div>
-      <div class="telem-chip status" [class.online]="signalrConnected()">
-        {{ signalrConnected() ? 'LIVE' : '---' }}
+      <div class="telem-toggles">
+        <div class="telem-switch" [class.active]="irOn()" (click)="toggleIr()" title="Toggle IR LED">
+          <span class="switch-label">IR</span>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </div>
+        <div class="telem-switch" *ngIf="soundAvailable()" [class.active]="sound.micStreamActive()" (click)="toggleMicStream()" title="Hear rover mic">
+          <span class="switch-label">MIC</span>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </div>
+        <div class="telem-switch" *ngIf="soundAvailable()" [class.active]="sound.voiceToRoverActive()" (click)="toggleVoiceToRover()" title="Speak to rover">
+          <span class="switch-label">VOICE</span>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </div>
       </div>
     </div>
 

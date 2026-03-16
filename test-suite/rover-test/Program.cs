@@ -16,12 +16,13 @@ return cmd switch
     "ir" => RunIr(CancellationToken.None),
     "ultrasound" => RunUltrasound(CancellationToken.None),
     "camera" => RunCamera(),
+    "sound" => RunSound(),
     _ => PrintUsage()
 };
 
 static int RunInteractiveMenu()
 {
-    var menu = new[] { "lcd", "heartbeat", "telemetry", "drive", "ir", "ultrasound", "camera" };
+    var menu = new[] { "lcd", "heartbeat", "telemetry", "drive", "ir", "ultrasound", "camera", "sound" };
     while (true)
     {
         Console.WriteLine();
@@ -58,6 +59,7 @@ static int RunCommand(string cmd) => cmd switch
     "ir" => RunIr(CancellationToken.None),
     "ultrasound" => RunUltrasound(CancellationToken.None),
     "camera" => RunCamera(),
+    "sound" => RunSound(),
     _ => 0
 };
 
@@ -77,6 +79,7 @@ static int PrintUsage()
           ir          IR LED toggle: run turns on (stays on), run again turns off, etc.
           ultrasound  HC-SR04 distance on GPIO 24/25
           camera      Capture image via rpicam-still / libcamera-still
+          sound       Record 2s from USB mic, play back (plughw:1,0)
         """);
     return 1;
 }
@@ -328,6 +331,87 @@ static int RunCamera()
     if (!foundExe && OperatingSystem.IsLinux())
         Console.Error.WriteLine("No camera app found. Install: sudo apt install -y libcamera-apps");
     return 1;
+}
+
+// --- Sound (USB mic + speakers plughw:1,0) ---
+static int RunSound()
+{
+    if (!OperatingSystem.IsLinux())
+    {
+        Console.Error.WriteLine("Sound test runs on Linux (RPi) only.");
+        return 1;
+    }
+
+    var tmpFile = Path.GetTempFileName();
+    const string dev = "plughw:1,0";
+    const int sampleRate = 16000;
+
+    try
+    {
+        Console.WriteLine("Recording 2 seconds from mic... (speak into the mic)");
+        using (var proc = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "arecord",
+                Arguments = $"-D {dev} -d 2 -t raw -f S16_LE -r {sampleRate} -c 1 \"{tmpFile}\"",
+                UseShellExecute = false,
+                RedirectStandardError = true
+            }
+        })
+        {
+            proc.Start();
+            var err = proc.StandardError.ReadToEnd();
+            proc.WaitForExit(5000);
+            if (proc.ExitCode != 0)
+            {
+                Console.Error.WriteLine($"arecord failed: {err}");
+                return 1;
+            }
+        }
+
+        var size = new FileInfo(tmpFile).Length;
+        if (size < 1000)
+        {
+            Console.Error.WriteLine($"Recording too small ({size} bytes) - mic may not be working");
+            return 1;
+        }
+        Console.WriteLine($"Recorded {size} bytes (~{size / (sampleRate * 2)} seconds)");
+
+        Console.WriteLine("Playing back... (check speakers)");
+        using (var proc = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "aplay",
+                Arguments = $"-D {dev} -t raw -f S16_LE -r {sampleRate} -c 1 \"{tmpFile}\"",
+                UseShellExecute = false,
+                RedirectStandardError = true
+            }
+        })
+        {
+            proc.Start();
+            var err = proc.StandardError.ReadToEnd();
+            proc.WaitForExit(5000);
+            if (proc.ExitCode != 0)
+            {
+                Console.Error.WriteLine($"aplay failed: {err}");
+                return 1;
+            }
+        }
+
+        Console.WriteLine("OK - Mic and speakers working");
+        return 0;
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error: {ex.Message}");
+        return 1;
+    }
+    finally
+    {
+        try { File.Delete(tmpFile); } catch { }
+    }
 }
 
 static string Truncate(string s, int max) => s.Length > max ? s[..max] : s;

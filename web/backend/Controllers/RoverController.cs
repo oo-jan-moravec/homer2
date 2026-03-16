@@ -13,6 +13,7 @@ public class RoverController : ControllerBase
     private readonly IIrService _ir;
     private readonly ICameraService _camera;
     private readonly ICameraStreamService _cameraStream;
+    private readonly IAudioStreamService _audioStream;
     private readonly ISystemInfoService _systemInfo;
     private readonly ILcdAutoUpdateService _lcdAutoUpdate;
 
@@ -22,6 +23,7 @@ public class RoverController : ControllerBase
         IIrService ir,
         ICameraService camera,
         ICameraStreamService cameraStream,
+        IAudioStreamService audioStream,
         ISystemInfoService systemInfo,
         ILcdAutoUpdateService lcdAutoUpdate)
     {
@@ -30,6 +32,7 @@ public class RoverController : ControllerBase
         _ir = ir;
         _camera = camera;
         _cameraStream = cameraStream;
+        _audioStream = audioStream;
         _systemInfo = systemInfo;
         _lcdAutoUpdate = lcdAutoUpdate;
     }
@@ -52,6 +55,7 @@ public class RoverController : ControllerBase
             irAvailable = _ir.IsAvailable,
             irOn = _ir.IsOn,
             cameraAvailable = _camera.IsAvailable,
+            soundAvailable = _audioStream.IsAvailable,
             timestamp = DateTime.UtcNow
         });
     }

@@ -2,6 +2,7 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RoverApiService } from '../../services/rover-api.service';
 import { RoverSignalRService, TelemetryData } from '../../services/rover-signalr.service';
+import { SoundService } from '../../services/sound.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
 import { batteryVoltageToPercent } from '../../utils/battery';
 import { wifiRssiToLabel } from '../../utils/wifi';
@@ -16,21 +17,30 @@ import { wifiRssiToLabel } from '../../utils/wifi';
 export class OperatorPageComponent implements OnInit, OnDestroy {
   private api = inject(RoverApiService);
   private signalr = inject(RoverSignalRService);
+  sound = inject(SoundService);
 
   telemetry = this.signalr.telemetry;
   signalrConnected = this.signalr.connected;
   camSrc = signal<string | null>(null);
   irOn = signal<boolean | null>(null);
+  soundAvailable = signal(false);
 
   ngOnInit() {
     this.signalr.connect().catch(() => {});
-    this.api.getStatus().subscribe({ next: s => this.irOn.set(s.irOn) });
+    this.api.getStatus().subscribe({
+      next: s => {
+        this.irOn.set(s.irOn);
+        this.soundAvailable.set(s.soundAvailable ?? false);
+      }
+    });
     // Auto-start video stream on load
     this.camSrc.set(this.api.getCameraStreamUrl());
   }
 
   ngOnDestroy() {
     this.signalr.stopDrive();
+    this.sound.stopMicStream();
+    this.sound.stopVoiceToRover();
   }
 
   onJoystickMove(e: { bearing: number; velocity: number }) {
@@ -66,5 +76,23 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
 
   wifiLabel(t: TelemetryData | null): string | null {
     return wifiRssiToLabel(t?.wifiRssiDb);
+  }
+
+  toggleMicStream() {
+    if (this.sound.micStreamActive()) {
+      this.sound.stopMicStream();
+    } else {
+      this.sound.startMicStream();
+    }
+  }
+
+  toggleVoiceToRover() {
+    if (this.sound.voiceToRoverActive()) {
+      this.sound.stopVoiceToRover();
+    } else {
+      this.sound.startVoiceToRover().catch((err) => {
+        console.error('[Operator] Voice start failed:', err);
+      });
+    }
   }
 }

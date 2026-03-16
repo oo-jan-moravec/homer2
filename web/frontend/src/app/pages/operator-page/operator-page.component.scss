@@ -69,6 +69,85 @@ $border: #1f2937;
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.telem-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.telem-toggles {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.telem-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  background: $bg-panel;
+  border: 1px solid $border;
+  border-radius: 999px;
+  font-size: 10px;
+
+  .switch-label {
+    color: $fg-dim;
+    letter-spacing: 0.1em;
+  }
+
+  .switch-track {
+    position: relative;
+    width: 2.25rem;
+    height: 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid $border;
+    border-radius: 999px;
+
+    .switch-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 0.6rem;
+      height: 0.6rem;
+      background: $fg-dim;
+      border-radius: 50%;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+  }
+
+  &:hover {
+    border-color: $fg;
+
+    .switch-track {
+      border-color: $fg;
+    }
+  }
+
+  &.active {
+    border-color: $fg;
+    background: rgba(0, 40, 15, 0.95);
+    box-shadow: 0 0 6px color.adjust($fg, $alpha: -0.7);
+
+    .switch-label {
+      color: $fg;
+      font-weight: 600;
+    }
+
+    .switch-track {
+      border-color: $fg;
+      background: rgba(0, 60, 22, 0.9);
+
+      .switch-thumb {
+        transform: translateX(calc(2.25rem - 0.6rem - 4px));
+        background: $fg;
+      }
+    }
+  }
 }
 
 .telem-chip {
@@ -79,36 +158,25 @@ $border: #1f2937;
   display: flex;
   align-items: baseline;
   gap: 0.35rem;
+  min-width: 7.5rem;
 
   .label {
     color: $fg-dim;
     letter-spacing: 0.1em;
+    flex-shrink: 0;
   }
 
   .value {
     color: $fg;
     font-weight: 600;
+    min-width: 6em;
+    text-align: right;
   }
 
   .unit {
     color: $fg-dim;
     font-size: 10px;
-  }
-
-  &.clickable {
-    cursor: pointer;
-
-    &:hover {
-      border-color: $fg;
-      background: color.adjust($bg-panel, $alpha: 0.1);
-    }
-  }
-
-  &.status {
-    margin-left: auto;
-
-    &.online { color: $fg; }
-    &:not(.online) { color: #666; }
+    flex-shrink: 0;
   }
 }
 

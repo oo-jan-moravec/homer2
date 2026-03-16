@@ -8,6 +8,7 @@ export interface RoverStatus {
   irAvailable: boolean;
   irOn: boolean;
   cameraAvailable: boolean;
+  soundAvailable?: boolean;
   timestamp: string;
 }
 

@@ -106,33 +106,20 @@ $border: #1f2937;
     }
   }
 
-  .video-panel .video-placeholder {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 4/3;
+  .panel-desc {
+    font-size: 11px;
+    color: $fg-dim;
+    margin: 0 0 0.5rem 0;
+  }
+
+  select {
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
     background: $bg;
     border: 1px solid $border;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-
-    img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-      position: relative;
-      z-index: 1;
-    }
-
-    .placeholder-text {
-      position: absolute;
-      color: $fg-dim;
-      font-size: 10px;
-      text-align: center;
-      pointer-events: none;
-    }
+    color: $fg;
+    font-family: inherit;
+    font-size: 12px;
   }
 
   footer {

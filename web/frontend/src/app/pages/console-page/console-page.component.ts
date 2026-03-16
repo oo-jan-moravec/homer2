@@ -31,7 +31,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   driveBearing = 0;
   driveVel = 0;
   message = signal<string>('');
-  camSrc = signal<string | null>(null);
+  videoQualityPreset = '1080p';
 
   ngOnInit() {
     this.api.getStatus().subscribe({
@@ -41,6 +41,10 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.refreshSystemInfo();
     this.api.getLcdAutoEnabled().subscribe({
       next: r => this.lcdAutoEnabled = r.enabled,
+      error: () => {}
+    });
+    this.api.getCameraQuality().subscribe({
+      next: r => this.videoQualityPreset = r.preset ?? '1080p',
       error: () => {}
     });
     this.signalr.connect().catch(() => this.message.set('SignalR failed'));
@@ -88,8 +92,11 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.api.setIr(on).subscribe({ next: () => this.refreshStatus() });
   }
 
-  refreshCamera() {
-    this.camSrc.set(this.api.getCameraUrl() + '&t=' + Date.now());
+  onVideoQualityChange(preset: string) {
+    this.api.setCameraQuality(preset).subscribe({
+      next: r => this.videoQualityPreset = r.preset,
+      error: () => this.message.set('Failed to set video quality')
+    });
   }
 
   resetEncoders() {

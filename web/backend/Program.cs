@@ -13,6 +13,7 @@ builder.Services.AddSingleton<IRoverSerialService, RoverSerialService>();
 builder.Services.AddSingleton<ILcdService, LcdService>();
 builder.Services.AddSingleton<IIrService, IrService>();
 builder.Services.AddSingleton<ICameraService, CameraService>();
+builder.Services.AddSingleton<IVideoQualityService, VideoQualityService>();
 builder.Services.AddSingleton<ICameraStreamService, CameraStreamService>();
 builder.Services.AddSingleton<IAudioStreamService, AudioStreamService>();
 builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();

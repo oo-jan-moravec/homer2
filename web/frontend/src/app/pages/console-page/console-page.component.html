@@ -96,12 +96,17 @@ ping: {{ telemetry()!.pingMs != null ? telemetry()!.pingMs + ' ms (8.8.8.8)' : '
     </section>
 
     <section class="panel video-panel">
-      <h3>CAMERA</h3>
-      <div class="video-placeholder">
-        <img *ngIf="camSrc()" [src]="camSrc()" alt="Video" />
-        <span class="placeholder-text">VIDEO FEED<br><small>click CAPTURE</small></span>
-      </div>
-      <button type="button" (click)="refreshCamera()">CAPTURE</button>
+      <h3>VIDEO QUALITY</h3>
+      <p class="panel-desc">Stream resolution (operator page). Lower = less memory/CPU. Takes effect when stream restarts.</p>
+      <label>
+        preset:
+        <select [(ngModel)]="videoQualityPreset" (ngModelChange)="onVideoQualityChange($event)">
+          <option value="1080p">1080p (default)</option>
+          <option value="720p">720p</option>
+          <option value="480p">480p</option>
+          <option value="240p">240p</option>
+        </select>
+      </label>
     </section>
   </div>
 

@@ -84,6 +84,14 @@ export class RoverApiService {
     return `${this.base}/camera/stream`;
   }
 
+  getCameraQuality(): Observable<{ preset: string }> {
+    return this.http.get<{ preset: string }>(`${this.base}/camera/quality`);
+  }
+
+  setCameraQuality(preset: string): Observable<{ preset: string }> {
+    return this.http.post<{ preset: string }>(`${this.base}/camera/quality`, { preset });
+  }
+
   resetEncoders(): Observable<void> {
     return this.http.post<void>(`${this.base}/encoders/reset`, {});
   }

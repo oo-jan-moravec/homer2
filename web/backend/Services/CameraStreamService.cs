@@ -18,6 +18,7 @@ public interface ICameraStreamService
 public sealed class CameraStreamService : ICameraStreamService, IAsyncDisposable
 {
     private readonly ILogger<CameraStreamService> _logger;
+    private readonly IVideoQualityService _quality;
     private readonly string? _vidExe;
     private readonly CancellationTokenSource _globalCts = new();
     private Process? _process;
@@ -27,9 +28,10 @@ public sealed class CameraStreamService : ICameraStreamService, IAsyncDisposable
 
     public bool IsAvailable => _vidExe != null;
 
-    public CameraStreamService(ILogger<CameraStreamService> logger)
+    public CameraStreamService(ILogger<CameraStreamService> logger, IVideoQualityService quality)
     {
         _logger = logger;
+        _quality = quality;
         _vidExe = FindRpicamVid();
     }
 
@@ -100,12 +102,14 @@ public sealed class CameraStreamService : ICameraStreamService, IAsyncDisposable
     {
         if (_process != null) return;
 
+        var (w, h, q) = _quality.GetRpicamArgs();
+
         _process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = _vidExe!,
-                Arguments = "-n -t 0 -o - --codec mjpeg -q 50",
+                Arguments = $"-n -t 0 -o - --codec mjpeg --width {w} --height {h} -q {q}",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true

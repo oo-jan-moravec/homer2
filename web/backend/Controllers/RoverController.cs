@@ -13,6 +13,7 @@ public class RoverController : ControllerBase
     private readonly IIrService _ir;
     private readonly ICameraService _camera;
     private readonly ICameraStreamService _cameraStream;
+    private readonly IVideoQualityService _videoQuality;
     private readonly IAudioStreamService _audioStream;
     private readonly ISystemInfoService _systemInfo;
     private readonly ILcdAutoUpdateService _lcdAutoUpdate;
@@ -23,6 +24,7 @@ public class RoverController : ControllerBase
         IIrService ir,
         ICameraService camera,
         ICameraStreamService cameraStream,
+        IVideoQualityService videoQuality,
         IAudioStreamService audioStream,
         ISystemInfoService systemInfo,
         ILcdAutoUpdateService lcdAutoUpdate)
@@ -32,6 +34,7 @@ public class RoverController : ControllerBase
         _ir = ir;
         _camera = camera;
         _cameraStream = cameraStream;
+        _videoQuality = videoQuality;
         _audioStream = audioStream;
         _systemInfo = systemInfo;
         _lcdAutoUpdate = lcdAutoUpdate;
@@ -115,6 +118,21 @@ public class RoverController : ControllerBase
         return Ok(new { on = _ir.IsOn });
     }
 
+    /// <summary>Get video stream quality preset (1080p, 720p, 480p, 240p).</summary>
+    [HttpGet("camera/quality")]
+    public IActionResult GetCameraQuality()
+    {
+        return Ok(new { preset = _videoQuality.Preset });
+    }
+
+    /// <summary>Set video stream quality preset. Lower res = less memory/CPU. Takes effect when stream restarts.</summary>
+    [HttpPost("camera/quality")]
+    public IActionResult SetCameraQuality([FromBody] CameraQualityRequest req)
+    {
+        _videoQuality.SetPreset(req.Preset ?? "1080p");
+        return Ok(new { preset = _videoQuality.Preset });
+    }
+
     /// <summary>Capture camera image. Returns JPEG.</summary>
     [HttpGet("camera")]
     public async Task<IActionResult> CaptureCamera(CancellationToken ct)
@@ -170,3 +188,4 @@ public class RoverController : ControllerBase
 public record LcdRequest(string? Line1, string? Line2);
 public record LcdAutoRequest(bool Enabled);
 public record IrRequest(bool On);
+public record CameraQualityRequest(string? Preset);

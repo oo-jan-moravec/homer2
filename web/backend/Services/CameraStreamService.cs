@@ -13,10 +13,11 @@ public interface ICameraStreamService
 }
 
 /// <summary>
-/// Streams MJPEG from rpicam-vid. Broadcasts to all subscribers. Starts camera on first subscriber, stops when last disconnects.
+/// Streams MJPEG from rpicam-vid. Tuned for Pi Zero (512MB). Max 2 connections, bounded buffers, 480p default.
 /// </summary>
 public sealed class CameraStreamService : ICameraStreamService, IAsyncDisposable
 {
+    private const int MaxSubscribers = 2;
     private readonly ILogger<CameraStreamService> _logger;
     private readonly IVideoQualityService _quality;
     private readonly string? _vidExe;
@@ -70,11 +71,16 @@ public sealed class CameraStreamService : ICameraStreamService, IAsyncDisposable
             yield break;
         }
 
-        var channel = Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-        _channels.TryAdd(channel, 0);
-
+        Channel<byte[]> channel;
         lock (_processLock)
         {
+            if (_subscriberCount >= MaxSubscribers)
+            {
+                _logger.LogWarning("Rejecting stream connection: max {Max} reached", MaxSubscribers);
+                yield break;
+            }
+            channel = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(2) { FullMode = BoundedChannelFullMode.DropOldest });
+            _channels.TryAdd(channel, 0);
             _subscriberCount++;
             if (_subscriberCount == 1)
                 StartProcess();
@@ -138,8 +144,8 @@ public sealed class CameraStreamService : ICameraStreamService, IAsyncDisposable
         const byte jpegEnd1 = 0xFF;
         const byte jpegEnd2 = 0xD9;
 
-        var buffer = ArrayPool<byte>.Shared.Rent(256 * 1024);
-        var pending = new List<byte>();
+        var buffer = ArrayPool<byte>.Shared.Rent(64 * 1024); // 64KB for 480p/720p; Pi Zero memory
+        var pending = new List<byte>(64 * 1024); // Pre-size to reduce allocations
         try
         {
             while (!ct.IsCancellationRequested && _process is { HasExited: false })
@@ -190,9 +196,16 @@ public sealed class CameraStreamService : ICameraStreamService, IAsyncDisposable
 
     private void BroadcastFrame(byte[] frame)
     {
-        foreach (var ch in _channels.Keys)
+        var keys = _channels.Keys;
+        var count = keys.Count;
+        foreach (var ch in keys)
         {
-            try { ch.Writer.TryWrite((byte[])frame.Clone()); } catch { }
+            try
+            {
+                // Single subscriber: avoid extra clone (frame is not reused). Multiple: need copy per consumer.
+                ch.Writer.TryWrite(count == 1 ? frame : (byte[])frame.Clone());
+            }
+            catch { }
         }
     }
 

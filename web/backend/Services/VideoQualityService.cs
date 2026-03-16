@@ -9,10 +9,11 @@ public interface IVideoQualityService
 
 /// <summary>
 /// Stores video quality preset for MJPEG stream. Affects resolution and JPEG quality.
+/// Default 480p for Pi Zero (512MB RAM) - use console to raise if needed.
 /// </summary>
 public sealed class VideoQualityService : IVideoQualityService
 {
-    private string _preset = "1080p";
+    private string _preset = "480p";
     private readonly object _lock = new();
 
     public string Preset
@@ -22,9 +23,9 @@ public sealed class VideoQualityService : IVideoQualityService
 
     public void SetPreset(string preset)
     {
-        var normalized = preset?.ToLowerInvariant()?.Trim() ?? "1080p";
+        var normalized = preset?.ToLowerInvariant()?.Trim() ?? "480p";
         if (normalized is not ("1080p" or "720p" or "480p" or "240p"))
-            normalized = "1080p";
+            normalized = "480p";
         lock (_lock) _preset = normalized;
     }
 
@@ -34,9 +35,9 @@ public sealed class VideoQualityService : IVideoQualityService
         return p switch
         {
             "240p" => (320, 240, 35),
-            "480p" => (640, 480, 40),
             "720p" => (1280, 720, 45),
-            _ => (1920, 1080, 50) // 1080p default
+            "1080p" => (1920, 1080, 50),
+            _ => (640, 480, 40) // 480p default for Pi Zero
         };
     }
 }

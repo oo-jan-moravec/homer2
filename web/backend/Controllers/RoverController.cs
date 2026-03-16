@@ -129,7 +129,7 @@ public class RoverController : ControllerBase
     [HttpPost("camera/quality")]
     public IActionResult SetCameraQuality([FromBody] CameraQualityRequest req)
     {
-        _videoQuality.SetPreset(req.Preset ?? "1080p");
+        _videoQuality.SetPreset(req.Preset ?? "480p");
         return Ok(new { preset = _videoQuality.Preset });
     }
 

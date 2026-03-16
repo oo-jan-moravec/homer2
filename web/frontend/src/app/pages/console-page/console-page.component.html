@@ -101,9 +101,9 @@ ping: {{ telemetry()!.pingMs != null ? telemetry()!.pingMs + ' ms (8.8.8.8)' : '
       <label>
         preset:
         <select [(ngModel)]="videoQualityPreset" (ngModelChange)="onVideoQualityChange($event)">
-          <option value="1080p">1080p (default)</option>
+          <option value="1080p">1080p</option>
           <option value="720p">720p</option>
-          <option value="480p">480p</option>
+          <option value="480p">480p (default)</option>
           <option value="240p">240p</option>
         </select>
       </label>

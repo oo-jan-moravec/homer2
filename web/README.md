@@ -35,6 +35,10 @@ Single-deployment web app: Angular frontend + .NET WebAPI backend.
 
 **Rover capabilities** (from test-suite, excl. ultrasound): LCD (I2C), heartbeat LED, telemetry, drive, IR LED, camera.
 
+## Pi Zero (512MB RAM)
+
+Backend is tuned for Pi Zero: video defaults to 480p, max 2 concurrent stream connections, bounded buffers. Use the technical console → Video Quality to raise resolution (720p/1080p) if needed; lower res reduces memory/CPU.
+
 ## Local development
 
 Terminal 1 — backend:

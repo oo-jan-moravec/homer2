@@ -31,7 +31,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   driveBearing = 0;
   driveVel = 0;
   message = signal<string>('');
-  videoQualityPreset = '1080p';
+  videoQualityPreset = '480p';
 
   ngOnInit() {
     this.api.getStatus().subscribe({
@@ -44,7 +44,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
       error: () => {}
     });
     this.api.getCameraQuality().subscribe({
-      next: r => this.videoQualityPreset = r.preset ?? '1080p',
+      next: r => this.videoQualityPreset = r.preset ?? '480p',
       error: () => {}
     });
     this.signalr.connect().catch(() => this.message.set('SignalR failed'));

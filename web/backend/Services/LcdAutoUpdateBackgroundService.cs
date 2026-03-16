@@ -1,16 +1,15 @@
 namespace RoverOperatorApi.Services;
 
 /// <summary>
-/// On startup: sets LCD line1=IP, line2=battery%/mem%/temp.
-/// Periodically updates line2 when auto-update is enabled.
-/// Format: "BAT75% MEM56% 41C"
+/// On startup and periodically: line1 = CPU temp + WiFi bars, line2 = BAT bars MEM%.
+/// Uses LCD custom chars: \0=empty block, \x01=full block.
+/// Format: "CPU 45°C WF████" / "BAT█████ MEM56%"
 /// </summary>
 public sealed class LcdAutoUpdateBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<LcdAutoUpdateBackgroundService> _logger;
     private const int UpdateIntervalMs = 2000;
-    private string? _line1Ip;
 
     public LcdAutoUpdateBackgroundService(IServiceProvider services, ILogger<LcdAutoUpdateBackgroundService> logger)
     {
@@ -39,18 +38,17 @@ public sealed class LcdAutoUpdateBackgroundService : BackgroundService
                     continue;
                 }
 
-                if (!didInitial)
+                var telem = telemetryStore.Get();
+                if (!didInitial || autoUpdate.Enabled)
                 {
-                    _line1Ip = GetPrimaryIp(sysInfo);
-                    var line2 = FormatLine2(telemetryStore.Get(), sysInfo);
-                    lcd.Write(_line1Ip ?? "--", line2);
-                    didInitial = true;
-                    _logger.LogInformation("LCD initial: {Line1} / {Line2}", _line1Ip, line2);
-                }
-                else if (autoUpdate.Enabled)
-                {
-                    var line2 = FormatLine2(telemetryStore.Get(), sysInfo);
-                    lcd.Write(_line1Ip ?? "--", line2);
+                    var line1 = FormatLine1(telem, sysInfo);
+                    var line2 = FormatLine2(telem, sysInfo);
+                    lcd.Write(line1, line2);
+                    if (!didInitial)
+                    {
+                        _logger.LogInformation("LCD initial: {Line1} / {Line2}", line1, line2);
+                        didInitial = true;
+                    }
                 }
             }
             catch (OperationCanceledException) { break; }
@@ -63,21 +61,57 @@ public sealed class LcdAutoUpdateBackgroundService : BackgroundService
         }
     }
 
-    private static string? GetPrimaryIp(ISystemInfoService sysInfo)
+    private const char BarEmpty = '\0';  // LCD custom char 0
+    private const char BarFull = '\x01'; // LCD custom char 1
+    private const char Degree = '\x02';  // LCD custom char 2 (degree symbol)
+
+    /// <summary>Line 1: CPU XX°C WF plus 4 block bars (empty/full).</summary>
+    private static string FormatLine1(Models.TelemetryData? telem, ISystemInfoService sysInfo)
     {
         var dto = sysInfo.GetSystemInfo();
-        return dto.IpAddresses.Length > 0 ? dto.IpAddresses[0] : null;
+        var tempStr = !string.IsNullOrEmpty(dto.CpuTempC) && double.TryParse(dto.CpuTempC, out var t)
+            ? $"{(int)Math.Round(t)}"
+            : "--";
+        var wifiBars = WifiRssiToBars(telem?.WifiRssiDb);
+        var wifiStr = "WF" + BarChars(wifiBars, 4);
+        return $"CPU {tempStr}{Degree}C {wifiStr}";
     }
 
+    /// <summary>Line 2: BAT plus 5 block bars, MEMxx%.</summary>
     private static string FormatLine2(Models.TelemetryData? telem, ISystemInfoService sysInfo)
     {
         var dto = sysInfo.GetSystemInfo();
-        var batPct = telem != null ? $"BAT{BatteryVoltageToPercent(telem.BatteryVoltage)}%" : "BAT--%";
-        var mem = $"MEM{dto.MemoryUsedPercent}%";
-        var temp = !string.IsNullOrEmpty(dto.CpuTempC) && double.TryParse(dto.CpuTempC, out var t)
-            ? $"{(int)Math.Round(t)}"
-            : "--";
-        return $"{batPct} {mem} {temp}";
+        var batBars = BatteryToBars(telem);
+        var batStr = "BAT" + BarChars(batBars, 5);
+        var memStr = $"MEM{dto.MemoryUsedPercent}%";
+        return $"{batStr} {memStr}";
+    }
+
+    /// <summary>Returns filled full blocks + remaining empty blocks. Unknown (-1) = all empty.</summary>
+    private static string BarChars(int filled, int total)
+    {
+        var f = filled < 0 ? 0 : Math.Min(filled, total);
+        return new string(BarFull, f) + new string(BarEmpty, total - f);
+    }
+
+    /// <summary>0-5 bars from battery voltage. -1 if unknown.</summary>
+    private static int BatteryToBars(Models.TelemetryData? telem)
+    {
+        if (telem == null) return -1;
+        var pct = BatteryVoltageToPercent(telem.BatteryVoltage);
+        if (pct <= 0) return 0;
+        return Math.Min(5, (int)Math.Ceiling(pct / 20.0));
+    }
+
+    /// <summary>0-4 bars from RSSI dBm. -1 if unknown.</summary>
+    private static int WifiRssiToBars(int? rssi)
+    {
+        if (rssi == null) return -1;
+        if (rssi >= -50) return 4;
+        if (rssi >= -60) return 3;
+        if (rssi >= -70) return 2;
+        if (rssi >= -80) return 1;
+        return 0;
     }
 
     private static int BatteryVoltageToPercent(double v)

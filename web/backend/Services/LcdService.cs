@@ -125,7 +125,25 @@ public sealed class LcdService : ILcdService, IDisposable
             WriteCommand(0x28);
             WriteCommand(0x0C);
             WriteCommand(0x06);
+            InitCustomChars();
             Clear();
+        }
+
+        /// <summary>Load custom chars into CGRAM: 0=empty block, 1=full block, 2=degree symbol.</summary>
+        private void InitCustomChars()
+        {
+            // Char 0: empty block (hollow rectangle)
+            WriteCommand(0x40); // CGRAM addr 0
+            foreach (var b in new byte[] { 0x1F, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x1F })
+            { WriteData(b); Thread.Sleep(1); }
+            // Char 1: full block (solid)
+            WriteCommand(0x48); // CGRAM addr 8 (char 1)
+            foreach (var b in new byte[] { 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F })
+            { WriteData(b); Thread.Sleep(1); }
+            // Char 2: degree symbol (°) - small circle
+            WriteCommand(0x50); // CGRAM addr 16 (char 2)
+            foreach (var b in new byte[] { 0x0E, 0x11, 0x11, 0x0E, 0x00, 0x00, 0x00, 0x00 })
+            { WriteData(b); Thread.Sleep(1); }
         }
 
         public void Dispose() => _i2c.Dispose();

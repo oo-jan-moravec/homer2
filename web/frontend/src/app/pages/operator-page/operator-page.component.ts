@@ -5,7 +5,6 @@ import { RoverSignalRService, TelemetryData } from '../../services/rover-signalr
 import { SoundService } from '../../services/sound.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
 import { batteryVoltageToPercent } from '../../utils/battery';
-import { wifiRssiToLabel } from '../../utils/wifi';
 
 @Component({
   selector: 'app-operator-page',
@@ -15,6 +14,9 @@ import { wifiRssiToLabel } from '../../utils/wifi';
   styleUrl: './operator-page.component.scss'
 })
 export class OperatorPageComponent implements OnInit, OnDestroy {
+  readonly batteryBarCount = [1, 2, 3, 4, 5] as const;
+  readonly wifiBarCount = [1, 2, 3, 4] as const;
+
   private api = inject(RoverApiService);
   private signalr = inject(RoverSignalRService);
   sound = inject(SoundService);
@@ -35,7 +37,7 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
         this.soundAvailable.set(s.soundAvailable ?? false);
       }
     });
-    // Auto-start video stream on load
+    // Single stream connection - URL is stable (no cache-busting)
     this.camSrc.set(this.api.getCameraStreamUrl());
     this.refreshSystemInfo();
     this.systemInfoInterval = setInterval(() => this.refreshSystemInfo(), 30_000);
@@ -43,6 +45,7 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.systemInfoInterval) clearInterval(this.systemInfoInterval);
+    this.camSrc.set(null); // Abort stream connection so browser closes the request
     this.signalr.stopDrive();
     this.sound.stopMicStream();
     this.sound.stopVoiceToRover();
@@ -86,13 +89,28 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     return batteryVoltageToPercent(t.batteryVoltage);
   }
 
+  /** 0–5 bars from battery percent. */
+  batteryBars(t: TelemetryData | null): number {
+    const pct = this.batteryPercent(t);
+    if (pct == null) return -1;
+    if (pct <= 0) return 0;
+    return Math.min(5, Math.ceil(pct / 20));
+  }
+
+  /** 0–4 bars from WiFi RSSI dBm. */
+  wifiBars(t: TelemetryData | null): number {
+    const rssi = t?.wifiRssiDb;
+    if (rssi == null) return -1;
+    if (rssi >= -50) return 4;
+    if (rssi >= -60) return 3;
+    if (rssi >= -70) return 2;
+    if (rssi >= -80) return 1;
+    return 0;
+  }
+
   memoryPercent(): number | null {
     const info = this.systemInfo();
     return info?.memoryUsedPercent ?? null;
-  }
-
-  wifiLabel(t: TelemetryData | null): string | null {
-    return wifiRssiToLabel(t?.wifiRssiDb);
   }
 
   toggleMicStream() {

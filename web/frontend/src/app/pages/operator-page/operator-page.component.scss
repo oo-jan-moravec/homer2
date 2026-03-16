@@ -180,6 +180,45 @@ $border: #1f2937;
   }
 }
 
+.telem-bars {
+  .bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    min-height: 1rem;
+
+    .bar {
+      width: 4px;
+      min-height: 4px;
+      background: rgba($fg-dim, 0.3);
+      border-radius: 1px;
+      transition: background 0.15s ease;
+
+      &.filled {
+        background: $fg;
+      }
+    }
+
+    &.unknown .bar {
+      background: rgba($fg-dim, 0.2);
+      opacity: 0.7;
+    }
+  }
+}
+
+/* WiFi: classic signal style (shortest to tallest) */
+.telem-wifi .bars .bar {
+  &:nth-child(1) { height: 0.35rem; }
+  &:nth-child(2) { height: 0.5rem; }
+  &:nth-child(3) { height: 0.65rem; }
+  &:nth-child(4) { height: 0.85rem; }
+}
+
+/* Battery: equal segments (fill level style) */
+.telem-battery .bars .bar {
+  height: 0.75rem;
+}
+
 .joystick-overlay {
   position: absolute;
   bottom: 1.5rem;

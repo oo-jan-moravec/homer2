@@ -30,7 +30,7 @@ Single-deployment web app: Angular frontend + .NET WebAPI backend.
 - `POST /api/rover/enc` — `{ enabled, kp?, max? }` encoder correction
 
 **SignalR** (for driving + streaming telemetry)
-- `/hubs/drive` — `Drive({ bearing, velocity })`, `Stop()`. Send every ~300ms while driving (watchdog 500ms).
+- `/hubs/drive` — `Drive(bearing, velocity)` (two int args), `Stop()`. Send every ~300ms while driving (watchdog 500ms).
 - `/hubs/telemetry` — server pushes `ReceiveTelemetry` every ~250ms when not driving.
 
 **Rover capabilities** (from test-suite, excl. ultrasound): LCD (I2C), heartbeat LED, telemetry, drive, IR LED, camera.

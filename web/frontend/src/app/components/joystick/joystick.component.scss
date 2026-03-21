@@ -14,9 +14,11 @@ $border: #1f2937;
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.6);
     border: 2px solid $border;
+    touch-action: none;
   }
 
   .stick {
+    touch-action: none;
     position: absolute;
     left: 50%;
     top: 50%;

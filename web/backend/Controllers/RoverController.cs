@@ -73,6 +73,17 @@ public class RoverController : ControllerBase
         return Ok(_serial.GetSerialDebug());
     }
 
+    /// <summary>
+    /// Same write path as SignalR <c>Drive</c>: sends <c>bearing velocity</c> on the configured serial port.
+    /// Use with curl when the test-suite drives but the UI does not — if this also does nothing, the problem is not SignalR (check <c>serialConnected</c>, port, service user).
+    /// </summary>
+    [HttpPost("drive")]
+    public IActionResult PostDrive([FromBody] DriveRequest req)
+    {
+        _serial.SendDrive(req.Bearing, req.Velocity);
+        return Ok(new { ok = true, serialConnected = _serial.IsConnected });
+    }
+
     /// <summary>Request one telemetry snapshot (REST fallback; use SignalR for streaming).</summary>
     [HttpGet("telemetry")]
     public IActionResult GetTelemetry(CancellationToken ct)
@@ -195,6 +206,7 @@ public class RoverController : ControllerBase
     }
 }
 
+public record DriveRequest(int Bearing, int Velocity);
 public record LcdRequest(string? Line1, string? Line2);
 public record LcdAutoRequest(bool Enabled);
 public record IrRequest(bool On);

@@ -6,6 +6,7 @@ public sealed record SerialDebugSnapshot(
     long DriveLockTimeouts,
     int TelemetryReadTimeoutMs,
     int DriveLockWaitMs,
-    IReadOnlyList<SerialTraceLine> Recent);
+    IReadOnlyList<SerialTraceLine> Recent,
+    string? LastDriveLine);
 
 public sealed record SerialTraceLine(string At, string Dir, string Line);

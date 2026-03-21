@@ -65,10 +65,19 @@ export class JoystickComponent implements AfterViewInit, OnDestroy {
   private onLayoutChange = () => this.readGeometry();
 
   private onDown = (e: PointerEvent) => {
+    const pad = this.padRef?.nativeElement;
+    if (!pad) return;
+
+    // setPointerCapture only works on the hit target; currentTarget is the pad when the hit is .stick.
+    const hit = this.pointerHitElement(pad, e.target);
     this.pointerId = e.pointerId;
     this.active.set(true);
     this.readGeometry();
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    try {
+      hit.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
     this.update(e);
   };
 
@@ -77,12 +86,21 @@ export class JoystickComponent implements AfterViewInit, OnDestroy {
     this.update(e);
   };
 
-  private onUp = () => {
+  private onUp = (e: PointerEvent) => {
+    if (this.pointerId !== null && e.pointerId !== this.pointerId) return;
     this.pointerId = null;
     this.active.set(false);
     this.stick.set({ x: 0, y: 0 });
     this.stop.emit();
   };
+
+  private pointerHitElement(pad: HTMLElement, target: EventTarget | null): HTMLElement {
+    if (target instanceof HTMLElement && pad.contains(target)) return target;
+    if (target instanceof Text && target.parentElement && pad.contains(target.parentElement)) {
+      return target.parentElement;
+    }
+    return pad;
+  }
 
   /** Sync center/radius with the pad’s current screen box (fixes stale math after resize, scroll, mobile UI). */
   private readGeometry() {

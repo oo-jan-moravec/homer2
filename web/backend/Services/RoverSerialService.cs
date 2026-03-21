@@ -41,9 +41,10 @@ public sealed class RoverSerialService : IRoverSerialService, IDisposable
     private SerialPort? _port;
     private readonly SemaphoreSlim _serialLock = new(1, 1);
     private bool _disposed;
-    private bool _connectionAttempted;
+    private DateTimeOffset _nextSerialOpenAttemptUtc = DateTimeOffset.MinValue;
     private long _driveSends;
     private long _driveLockTimeouts;
+    private string? _lastDriveLine;
     private readonly ConcurrentQueue<SerialTraceLine> _trace = new();
 
     public bool IsConnected => _port?.IsOpen ?? false;
@@ -66,7 +67,8 @@ public sealed class RoverSerialService : IRoverSerialService, IDisposable
             Interlocked.Read(ref _driveLockTimeouts),
             _telemetryReadTimeoutMs,
             _driveLockWaitMs,
-            recent);
+            recent,
+            _lastDriveLine);
     }
 
     private void Trace(string dir, string line)
@@ -80,20 +82,28 @@ public sealed class RoverSerialService : IRoverSerialService, IDisposable
     public void EnsureConnected()
     {
         if (_port?.IsOpen == true) return;
-        if (_connectionAttempted && _port == null) return;
 
-        _connectionAttempted = true;
+        var now = DateTimeOffset.UtcNow;
+        if (now < _nextSerialOpenAttemptUtc) return;
+
         try
         {
             _port?.Dispose();
-            _port = new SerialPort(_portName, 115200) { ReadTimeout = _telemetryReadTimeoutMs, WriteTimeout = 1000 };
+            _port = new SerialPort(_portName, 115200)
+            {
+                ReadTimeout = _telemetryReadTimeoutMs,
+                WriteTimeout = 1000,
+                NewLine = "\n"
+            };
             _port.Open();
+            _nextSerialOpenAttemptUtc = DateTimeOffset.MinValue;
             _logger.LogInformation("Serial connected: {Port}", _portName);
         }
         catch (Exception ex)
         {
             _port = null;
-            _logger.LogWarning(ex, "Serial not available: {Port} (running without rover hardware)", _portName);
+            _nextSerialOpenAttemptUtc = now.AddSeconds(3);
+            _logger.LogWarning(ex, "Serial not available: {Port} (will retry)", _portName);
         }
     }
 
@@ -150,6 +160,7 @@ public sealed class RoverSerialService : IRoverSerialService, IDisposable
             var line = $"{Math.Clamp(bearing, 0, 359)} {Math.Clamp(velocity, 0, 9)}";
             Trace("tx", line);
             _port!.WriteLine(line);
+            _lastDriveLine = line;
             Interlocked.Increment(ref _driveSends);
         }
         finally

@@ -50,6 +50,8 @@ export interface SerialDebugSnapshot {
   telemetryReadTimeoutMs: number;
   driveLockWaitMs: number;
   recent: SerialTraceLine[];
+  /** Last "bearing vel" written to serial after a successful Drive send. */
+  lastDriveLine?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })

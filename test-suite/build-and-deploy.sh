@@ -9,7 +9,7 @@
 
 set -e
 
-HOST="${RPI_HOST:-rpi-rover-brain4.local}"
+HOST="${RPI_HOST:-rpi-rover-brain5.local}"
 USER="${RPI_USER:-hanzzo}"
 REMOTE_DIR="${RPI_REMOTE_DIR:-~/test-scripts/rover-test}"
 TARGET="linux-arm64"

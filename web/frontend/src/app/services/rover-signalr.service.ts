@@ -46,9 +46,14 @@ export class RoverSignalRService implements OnDestroy {
       this.telemetry.set(data);
     });
 
-    await this.driveConnection.start();
-    await this.telemetryConnection.start();
-    this.connected.set(true);
+    try {
+      await this.driveConnection.start();
+      await this.telemetryConnection.start();
+      this.connected.set(true);
+    } catch (e) {
+      console.error('[SignalR] connect failed (check dev proxy: /hubs → backend, ws: true)', e);
+      throw e;
+    }
   }
 
   disconnect(): void {
@@ -83,9 +88,11 @@ export class RoverSignalRService implements OnDestroy {
   }
 
   private sendDrive(): void {
-    this.driveConnection?.invoke('Drive', {
-      bearing: this.currentBearing,
-      velocity: this.currentVelocity
-    }).catch(() => {});
+    if (!this.driveConnection || this.driveConnection.state !== signalR.HubConnectionState.Connected) {
+      return;
+    }
+    this.driveConnection
+      .invoke('Drive', this.currentBearing, this.currentVelocity)
+      .catch((err) => console.error('[SignalR] Drive invoke failed', err));
   }
 }

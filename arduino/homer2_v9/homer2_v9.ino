@@ -51,6 +51,7 @@
 #include <Arduino.h>
 #include <avr/interrupt.h>
 #include <math.h>
+#include <string.h>
 
 //================ VERSION 9 =================
 const char VERSION[] = "9.4";
@@ -153,12 +154,14 @@ bool readLine(char *out, size_t outSize) {
     if (c == '\r') continue;
 
     if (c == '\n') {
-      if (lineLen >= outSize) lineLen = outSize - 1;
-      out[lineLen] = '\0';
+      if (lineLen >= sizeof(lineBuf)) lineLen = sizeof(lineBuf) - 1;
+      lineBuf[lineLen] = '\0';
+      strncpy(out, lineBuf, outSize);
+      out[outSize - 1] = '\0';
       resetLine();
       return true;
     }
-    if (lineLen < outSize - 1) out[lineLen++] = c;
+    if (lineLen < sizeof(lineBuf) - 1) lineBuf[lineLen++] = c;
   }
   return false;
 }

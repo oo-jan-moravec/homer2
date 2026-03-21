@@ -6,15 +6,19 @@ $bg: #0a0a0f;
 $bg-panel: rgba(13, 17, 23, 0.92);
 $border: #1f2937;
 
+// ── Operator root ────────────────────────────────────────────────────────────
+
 .operator {
   font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   color: $fg;
   background: $bg;
   position: fixed;
-  inset: 3rem 0 0 0;
+  inset: 0;
   margin: 0;
   padding: 0;
 }
+
+// ── Video viewport ───────────────────────────────────────────────────────────
 
 .video-viewport {
   position: relative;
@@ -61,6 +65,8 @@ $border: #1f2937;
   }
 }
 
+// ── Top HUD ──────────────────────────────────────────────────────────────────
+
 .telem-overlay {
   position: absolute;
   top: 0.75rem;
@@ -70,6 +76,9 @@ $border: #1f2937;
   gap: 0.5rem;
   flex-wrap: wrap;
   align-items: center;
+  pointer-events: none;
+
+  > * { pointer-events: auto; }
 }
 
 .telem-chips {
@@ -94,11 +103,9 @@ $border: #1f2937;
   border: 1px solid $border;
   border-radius: 999px;
   font-size: 10px;
+  user-select: none;
 
-  .switch-label {
-    color: $fg-dim;
-    letter-spacing: 0.1em;
-  }
+  .switch-label { color: $fg-dim; letter-spacing: 0.1em; }
 
   .switch-track {
     position: relative;
@@ -121,11 +128,8 @@ $border: #1f2937;
   }
 
   &:hover {
-    border-color: $fg;
-
-    .switch-track {
-      border-color: $fg;
-    }
+    border-color: color.adjust($fg, $alpha: -0.5);
+    .switch-track { border-color: color.adjust($fg, $alpha: -0.5); }
   }
 
   &.active {
@@ -133,10 +137,7 @@ $border: #1f2937;
     background: rgba(0, 40, 15, 0.95);
     box-shadow: 0 0 6px color.adjust($fg, $alpha: -0.7);
 
-    .switch-label {
-      color: $fg;
-      font-weight: 600;
-    }
+    .switch-label { color: $fg; font-weight: 600; }
 
     .switch-track {
       border-color: $fg;
@@ -150,6 +151,8 @@ $border: #1f2937;
   }
 }
 
+// ── Telem chips ───────────────────────────────────────────────────────────────
+
 .telem-chip {
   background: $bg-panel;
   border: 1px solid $border;
@@ -160,24 +163,9 @@ $border: #1f2937;
   gap: 0.35rem;
   min-width: 7.5rem;
 
-  .label {
-    color: $fg-dim;
-    letter-spacing: 0.1em;
-    flex-shrink: 0;
-  }
-
-  .value {
-    color: $fg;
-    font-weight: 600;
-    min-width: 6em;
-    text-align: right;
-  }
-
-  .unit {
-    color: $fg-dim;
-    font-size: 10px;
-    flex-shrink: 0;
-  }
+  .label { color: $fg-dim; letter-spacing: 0.1em; flex-shrink: 0; }
+  .value { color: $fg; font-weight: 600; min-width: 6em; text-align: right; }
+  .unit  { color: $fg-dim; font-size: 10px; flex-shrink: 0; }
 }
 
 .telem-bars {
@@ -193,20 +181,12 @@ $border: #1f2937;
       background: rgba($fg-dim, 0.3);
       border-radius: 1px;
       transition: background 0.15s ease;
-
-      &.filled {
-        background: $fg;
-      }
+      &.filled { background: $fg; }
     }
-
-    &.unknown .bar {
-      background: rgba($fg-dim, 0.2);
-      opacity: 0.7;
-    }
+    &.unknown .bar { background: rgba($fg-dim, 0.2); opacity: 0.7; }
   }
 }
 
-/* WiFi: classic signal style (shortest to tallest) */
 .telem-wifi .bars .bar {
   &:nth-child(1) { height: 0.35rem; }
   &:nth-child(2) { height: 0.5rem; }
@@ -214,10 +194,9 @@ $border: #1f2937;
   &:nth-child(4) { height: 0.85rem; }
 }
 
-/* Battery: equal segments (fill level style) */
-.telem-battery .bars .bar {
-  height: 0.75rem;
-}
+.telem-battery .bars .bar { height: 0.75rem; }
+
+// ── Joystick ─────────────────────────────────────────────────────────────────
 
 .joystick-overlay {
   position: absolute;
@@ -227,10 +206,166 @@ $border: #1f2937;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+  z-index: 10;
 
-  .label {
+  .label { font-size: 10px; color: $fg-dim; letter-spacing: 0.15em; }
+}
+
+// ── Console overlay ───────────────────────────────────────────────────────────
+
+.console-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(10, 10, 15, 0.78);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  // Hidden by default; toggled by .visible
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+
+  &.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+}
+
+.console-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid $border;
+  background: rgba(0, 0, 0, 0.55);
+  flex-shrink: 0;
+  font-size: 12px;
+
+  .console-prompt { color: $fg-dim; }
+  .console-title  { font-weight: 700; letter-spacing: 0.1em; }
+  .console-status {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 0.08em;
+    &.online { color: $fg; }
+  }
+
+  .console-close {
+    margin-left: auto;
+    background: none;
+    border: 1px solid $border;
+    border-radius: 50%;
+    color: $fg-dim;
+    font-family: inherit;
+    font-size: 12px;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.12s, border-color 0.12s;
+
+    &:hover { color: $fg; border-color: $fg; }
+  }
+}
+
+.console-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+  padding: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.console-footer {
+  padding: 0.4rem 1rem;
+  font-size: 11px;
+  color: $fg-dim;
+  border-top: 1px solid $border;
+  background: rgba(0, 0, 0, 0.55);
+  flex-shrink: 0;
+}
+
+// ── Console panels ────────────────────────────────────────────────────────────
+
+.cpanel {
+  background: rgba(13, 17, 23, 0.72);
+  border: 1px solid $border;
+  padding: 0.85rem;
+
+  h3 {
     font-size: 10px;
     color: $fg-dim;
     letter-spacing: 0.15em;
+    margin: 0 0 0.65rem 0;
   }
+
+  pre {
+    margin: 0 0 0.65rem 0;
+    font-size: 11px;
+    line-height: 1.55;
+    color: $fg;
+    white-space: pre-wrap;
+  }
+
+  label { display: block; margin-bottom: 0.45rem; font-size: 11px; }
+
+  input[type='checkbox'] { margin-right: 0.4rem; accent-color: $fg; }
+  input[type='range']    { width: 80px; margin: 0 0.4rem; accent-color: $fg; }
+
+  input[type='text'],
+  input[type='number'] {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.4rem;
+    padding: 0.3rem;
+    background: $bg;
+    border: 1px solid $border;
+    color: $fg;
+    font-family: inherit;
+    font-size: 11px;
+    box-sizing: border-box;
+
+    &::placeholder { color: $fg-dim; opacity: 0.6; }
+  }
+
+  select {
+    margin-left: 0.4rem;
+    padding: 0.25rem 0.4rem;
+    background: $bg;
+    border: 1px solid $border;
+    color: $fg;
+    font-family: inherit;
+    font-size: 11px;
+  }
+
+  button {
+    padding: 0.3rem 0.65rem;
+    background: $bg;
+    border: 1px solid $border;
+    color: $fg;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    &:hover {
+      background: color.adjust($fg, $alpha: -0.9);
+      border-color: $fg;
+    }
+  }
+
+  .cbtns        { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
+  .bearing-row  { display: flex; justify-content: center; gap: 0.4rem; margin-bottom: 0.3rem; }
+  .vel-row      { display: flex; align-items: center; margin-top: 0.45rem; font-size: 11px; }
+  .cdesc        { font-size: 10px; color: $fg-dim; margin: 0 0 0.4rem 0; }
 }

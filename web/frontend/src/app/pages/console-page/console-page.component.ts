@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RoverApiService, RoverStatus, SystemInfo, TelemetryData } from '../../services/rover-api.service';
 import { RoverSignalRService } from '../../services/rover-signalr.service';
+import { JoystickComponent } from '../../components/joystick/joystick.component';
 import { batteryVoltageToPercent } from '../../utils/battery';
 import { wifiRssiToLabelAndDb } from '../../utils/wifi';
 
 @Component({
   selector: 'app-console-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, JoystickComponent],
   templateUrl: './console-page.component.html',
   styleUrl: './console-page.component.scss'
 })
@@ -32,6 +33,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   driveVel = 0;
   message = signal<string>('');
   videoQualityPreset = '480p';
+  camSrc = signal<string | null>(null);
 
   ngOnInit() {
     this.api.getStatus().subscribe({
@@ -48,9 +50,11 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
       error: () => {}
     });
     this.signalr.connect().catch(() => this.message.set('SignalR failed'));
+    this.camSrc.set(this.api.getCameraStreamUrl());
   }
 
   ngOnDestroy() {
+    this.camSrc.set(null);
     this.signalr.stopDrive();
   }
 
@@ -115,6 +119,22 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.signalr.stopDrive();
     this.driveVel = 0;
     this.driveBearing = 0;
+  }
+
+  onJoystickMove(e: { bearing: number; velocity: number }) {
+    this.signalr.drive(e.bearing, e.velocity);
+  }
+
+  onJoystickStop() {
+    this.signalr.stopDrive();
+  }
+
+  onStreamError() {
+    this.camSrc.set(null);
+  }
+
+  retryStream() {
+    this.camSrc.set(this.api.getCameraStreamUrl());
   }
 
   bearingLabel(b: number): string {

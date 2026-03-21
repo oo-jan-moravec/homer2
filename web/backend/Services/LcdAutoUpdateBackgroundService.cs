@@ -114,16 +114,13 @@ public sealed class LcdAutoUpdateBackgroundService : BackgroundService
         return 0;
     }
 
+    /// <summary>11-cell NiMH: ~11 V empty, ~15.1 V full (resting). Matches frontend battery.ts.</summary>
     private static int BatteryVoltageToPercent(double v)
     {
-        if (v >= 12.6) return 100;
-        if (v >= 12.2) return 90;
-        if (v >= 11.7) return 75;
-        if (v >= 11.3) return 60;
-        if (v >= 10.8) return 50;
-        if (v >= 10.4) return 35;
-        if (v >= 9.9) return 20;
-        if (v >= 9.45) return 10;
-        return 0;
+        const double vEmpty = 11.0;
+        const double vFull = 15.1;
+        if (v <= vEmpty) return 0;
+        if (v >= vFull) return 100;
+        return (int)Math.Round((v - vEmpty) / (vFull - vEmpty) * 100.0);
     }
 }

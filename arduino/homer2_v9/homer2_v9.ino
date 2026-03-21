@@ -32,11 +32,12 @@
 // | Startup  | #HOMER <ver> READY | Ready, <ver>=firmware version                  |
 // | Reset    | #R               | Encoders zeroed                                 |
 // | T cmd    | le,re,dist_mm,vL,vR,vBat | Telemetry line (see table below)        |
+// | Every 5s | le,re,dist_mm,vL,vR,vBat | Unsolicited telemetry (v9+); no watchdog refresh |
 // | ENC cmd  | #ENC en kp max   | Encoder config echo                             |
 // | Parse err| ERR parse        | Invalid command                                 |
 // +----------+------------------+------------------------------------------------+
 //
-// TELEMETRY (rover -> host, on T command):
+// TELEMETRY (rover -> host, on T command or auto every 5s in v9+):
 // +------+------+--------+---------+---------+--------+
 // |  le  |  re  | dist_mm| vLmmps  | vRmmps  | vBat   |
 // +------+------+--------+---------+---------+--------+
@@ -51,8 +52,12 @@
 #include <avr/interrupt.h>
 #include <math.h>
 
-//================ VERSION 8 =================
-const char VERSION[] = "8";
+//================ VERSION 9 =================
+const char VERSION[] = "9";
+
+// Unsolicited telemetry interval (host can listen without sending T)
+const unsigned long AUTO_TELEM_MS = 5000;
+static unsigned long lastAutoTelemMs = 0;
 
 // ===== Battery voltage (A0) — 11-cell NiMH pack =====
 const int batteryPin = A0;
@@ -60,7 +65,7 @@ const float R1 = 47000.0;
 const float R2 = 22000.0;
 const float ADC_REF = 5.0;
 const int ADC_MAX = 1023;
-// If multimeter on pack disagrees with telemetry: actual_V / reported_V
+// If multimeter on pack disagrees with telemetry: actual_V / reported_V (e.g. 13.0/14.0 ≈ 0.93)
 const float BATTERY_VOLTAGE_CALIB = 1.0f;
 
 // ===== Motor A (LEFT) =====
@@ -296,6 +301,49 @@ static void bearingVelocityToLR(int bearing, int velocity, int16_t *outL, int16_
   *outR = clamp_i16((long)round(right * v));
 }
 
+// Same CSV as legacy T reply. touchWatchdog: true when host sent T (refreshes 500ms motor command timeout).
+static void emitTelemetry(bool touchWatchdog) {
+  if (touchWatchdog)
+    lastCmdMs = millis();
+
+  unsigned long nowMs = millis();
+  unsigned long dtMs = (lastTelemMs != 0) ? (nowMs - lastTelemMs) : 1;
+  if (dtMs == 0) dtMs = 1;
+
+  noInterrupts();
+  long l = leftEdges;
+  long r = rightEdges;
+  interrupts();
+
+  long dL = l - lastLEdges;
+  long dR = r - lastREdges;
+  lastLEdges = l;
+  lastREdges = r;
+  lastTelemMs = nowMs;
+
+  float dt_s = dtMs / 1000.0f;
+  float vL_mmps_f = (dL * CM_PER_EDGE * 10.0f) / dt_s;
+  float vR_mmps_f = (dR * CM_PER_EDGE * 10.0f) / dt_s;
+  long vL_mmps = lroundf(vL_mmps_f);
+  long vR_mmps = lroundf(vR_mmps_f);
+
+  long dist_mm = lroundf((l + r) / 2.0f * CM_PER_EDGE * 10.0f);
+
+  float voltage = readBatteryVoltage();
+
+  Serial.print(l);
+  Serial.print(",");
+  Serial.print(r);
+  Serial.print(",");
+  Serial.print(dist_mm);
+  Serial.print(",");
+  Serial.print(clamp_i16(vL_mmps));
+  Serial.print(",");
+  Serial.print(clamp_i16(vR_mmps));
+  Serial.print(",");
+  Serial.println(voltage, 2);
+}
+
 void loop() {
   // ---- command handling: <bearing 0-359> <velocity 0-9> -----
   char line[64];
@@ -313,45 +361,7 @@ void loop() {
       lastCmdMs = millis();
       Serial.println("#R");
     } else if ((line[0] == 'T' || line[0] == 't') && (line[1] == '\0' || line[1] == ' ' || line[1] == '\r')) {
-      // Telemetry on request
-      lastCmdMs = millis();
-      unsigned long nowMs = millis();
-      unsigned long dtMs = (lastTelemMs != 0) ? (nowMs - lastTelemMs) : 1;
-      if (dtMs == 0) dtMs = 1;
-
-      noInterrupts();
-      long l = leftEdges;
-      long r = rightEdges;
-      interrupts();
-
-      long dL = l - lastLEdges;
-      long dR = r - lastREdges;
-      lastLEdges = l;
-      lastREdges = r;
-      lastTelemMs = nowMs;
-
-      float dt_s = dtMs / 1000.0f;
-      float vL_mmps_f = (dL * CM_PER_EDGE * 10.0f) / dt_s;
-      float vR_mmps_f = (dR * CM_PER_EDGE * 10.0f) / dt_s;
-      long vL_mmps = lroundf(vL_mmps_f);
-      long vR_mmps = lroundf(vR_mmps_f);
-
-      // avg distance (mm) from both wheels; resets with R
-      long dist_mm = lroundf((l + r) / 2.0f * CM_PER_EDGE * 10.0f);
-
-      float voltage = readBatteryVoltage();
-
-      Serial.print(l);
-      Serial.print(",");
-      Serial.print(r);
-      Serial.print(",");
-      Serial.print(dist_mm);
-      Serial.print(",");
-      Serial.print(clamp_i16(vL_mmps));
-      Serial.print(",");
-      Serial.print(clamp_i16(vR_mmps));
-      Serial.print(",");
-      Serial.println(voltage, 2);
+      emitTelemetry(true);
     } else if (line[0] == 'E' && line[1] == 'N' && line[2] == 'C' && (line[3] == '\0' || line[3] == ' ')) {
       int en = 0, kp = 0, maxc = 0;
       int n = sscanf(line + 3, "%d %d %d", &en, &kp, &maxc);
@@ -428,5 +438,12 @@ void loop() {
 
     setLeft(appliedL);
     setRight(appliedR);
+  }
+
+  // v9: push telemetry on a fixed interval (does not refresh motor watchdog)
+  unsigned long now = millis();
+  if (now - lastAutoTelemMs >= AUTO_TELEM_MS) {
+    emitTelemetry(false);
+    lastAutoTelemMs = now;
   }
 }

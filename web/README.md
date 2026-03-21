@@ -39,6 +39,14 @@ Single-deployment web app: Angular frontend + .NET WebAPI backend.
 
 Backend is tuned for Pi Zero: video defaults to 480p, max 2 concurrent stream connections, bounded buffers. Use the technical console → Video Quality to raise resolution (720p/1080p) if needed; lower res reduces memory/CPU.
 
+## LCD I2C stability (gibberish / noise)
+
+If the LCD shows random characters, add to `/boot/config.txt` or `/boot/firmware/config.txt` (Bookworm+):
+```
+dtparam=i2c_arm_baudrate=10000
+```
+This lowers I2C from 100 kHz to 10 kHz for better tolerance of bus noise and power dips. Reboot to apply. Software already uses retries and longer delays.
+
 ## Local development
 
 Terminal 1 — backend:

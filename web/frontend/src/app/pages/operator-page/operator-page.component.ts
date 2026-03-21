@@ -1,15 +1,17 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RoverApiService, SystemInfo } from '../../services/rover-api.service';
-import { RoverSignalRService, TelemetryData } from '../../services/rover-signalr.service';
+import { FormsModule } from '@angular/forms';
+import { RoverApiService, RoverStatus, SystemInfo, TelemetryData } from '../../services/rover-api.service';
+import { RoverSignalRService } from '../../services/rover-signalr.service';
 import { SoundService } from '../../services/sound.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
 import { batteryVoltageToPercent } from '../../utils/battery';
+import { wifiRssiToLabelAndDb } from '../../utils/wifi';
 
 @Component({
   selector: 'app-operator-page',
   standalone: true,
-  imports: [CommonModule, JoystickComponent],
+  imports: [CommonModule, FormsModule, JoystickComponent],
   templateUrl: './operator-page.component.html',
   styleUrl: './operator-page.component.scss'
 })
@@ -27,25 +29,42 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   irOn = signal<boolean | null>(null);
   soundAvailable = signal(false);
   systemInfo = signal<SystemInfo | null>(null);
+
+  // Console overlay
+  consoleVisible = signal(false);
+  status = signal<RoverStatus | null>(null);
+  consoleMessage = signal('');
+  videoQualityPreset = '480p';
+  lcdLine1 = '';
+  lcdLine2 = '';
+  lcdAutoEnabled = true;
+  encEnabled = true;
+  encKp = 50;
+  encMax = 35;
+  manualBearing = 0;
+  manualVel = 0;
+
   private systemInfoInterval?: ReturnType<typeof setInterval>;
 
   ngOnInit() {
     this.signalr.connect().catch(() => {});
     this.api.getStatus().subscribe({
       next: s => {
+        this.status.set(s);
         this.irOn.set(s.irOn);
         this.soundAvailable.set(s.soundAvailable ?? false);
       }
     });
-    // Single stream connection - URL is stable (no cache-busting)
     this.camSrc.set(this.api.getCameraStreamUrl());
     this.refreshSystemInfo();
     this.systemInfoInterval = setInterval(() => this.refreshSystemInfo(), 30_000);
+    this.api.getLcdAutoEnabled().subscribe({ next: r => this.lcdAutoEnabled = r.enabled, error: () => {} });
+    this.api.getCameraQuality().subscribe({ next: r => this.videoQualityPreset = r.preset ?? '480p', error: () => {} });
   }
 
   ngOnDestroy() {
     if (this.systemInfoInterval) clearInterval(this.systemInfoInterval);
-    this.camSrc.set(null); // Abort stream connection so browser closes the request
+    this.camSrc.set(null);
     this.signalr.stopDrive();
     this.sound.stopMicStream();
     this.sound.stopVoiceToRover();
@@ -58,46 +77,79 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  onJoystickMove(e: { bearing: number; velocity: number }) {
-    this.signalr.drive(e.bearing, e.velocity);
+  refreshStatus() {
+    this.api.getStatus().subscribe({ next: s => this.status.set(s) });
   }
 
-  onJoystickStop() {
-    this.signalr.stopDrive();
+  // Joystick drive
+  onJoystickMove(e: { bearing: number; velocity: number }) { this.signalr.drive(e.bearing, e.velocity); }
+  onJoystickStop() { this.signalr.stopDrive(); }
+
+  onStreamError() { this.camSrc.set(null); }
+  retryStream() { this.camSrc.set(this.api.getCameraStreamUrl()); }
+
+  toggleIr() { this.api.toggleIr().subscribe({ next: r => this.irOn.set(r.on) }); }
+
+  toggleMicStream() {
+    if (this.sound.micStreamActive()) this.sound.stopMicStream();
+    else this.sound.startMicStream();
   }
 
-  onStreamError() {
-    this.camSrc.set(null);
+  toggleVoiceToRover() {
+    if (this.sound.voiceToRoverActive()) this.sound.stopVoiceToRover();
+    else this.sound.startVoiceToRover().catch(err => console.error('[Operator] Voice start failed:', err));
   }
 
-  retryStream() {
-    this.camSrc.set(this.api.getCameraStreamUrl());
+  // Console: LCD
+  setLcd() {
+    this.api.setLcd(this.lcdLine1, this.lcdLine2).subscribe({
+      next: () => this.consoleMessage.set('LCD updated'),
+      error: () => this.consoleMessage.set('LCD failed')
+    });
+  }
+  clearLcd() { this.api.clearLcd().subscribe(); }
+  onLcdAutoChange(enabled: boolean) {
+    this.lcdAutoEnabled = enabled;
+    this.api.setLcdAutoEnabled(enabled).subscribe({
+      next: r => this.lcdAutoEnabled = r.enabled,
+      error: () => this.lcdAutoEnabled = !enabled
+    });
   }
 
-  toggleIr() {
-    this.api.toggleIr().subscribe({ next: r => this.irOn.set(r.on) });
+  // Console: IR
+  setIr(on: boolean) { this.api.setIr(on).subscribe({ next: r => this.irOn.set(r.on) }); }
+
+  // Console: video quality
+  onVideoQualityChange(preset: string) {
+    this.api.setCameraQuality(preset).subscribe({
+      next: r => this.videoQualityPreset = r.preset,
+      error: () => this.consoleMessage.set('Failed to set video quality')
+    });
   }
 
+  // Console: encoder
+  resetEncoders() { this.api.resetEncoders().subscribe(); }
+  setEncConfig() { this.api.setEncoderConfig(this.encEnabled, this.encKp, this.encMax).subscribe(); }
+
+  // Console: manual drive buttons
+  sendManualDrive() { this.signalr.drive(this.manualBearing, this.manualVel); }
+  stopManualDrive() { this.signalr.stopDrive(); this.manualVel = 0; this.manualBearing = 0; }
+
+  // Telemetry helpers
   speedKmh(t: TelemetryData | null): number {
     if (!t) return 0;
-    const avg = (Math.abs(t.velocityLeftMmps) + Math.abs(t.velocityRightMmps)) / 2;
-    return Math.round(avg * 0.0036 * 10) / 10;
+    return Math.round((Math.abs(t.velocityLeftMmps) + Math.abs(t.velocityRightMmps)) / 2 * 0.0036 * 10) / 10;
   }
-
   batteryPercent(t: TelemetryData | null): number | null {
     if (t?.batteryVoltage == null) return null;
     return batteryVoltageToPercent(t.batteryVoltage);
   }
-
-  /** 0–5 bars from battery percent. */
   batteryBars(t: TelemetryData | null): number {
     const pct = this.batteryPercent(t);
     if (pct == null) return -1;
     if (pct <= 0) return 0;
     return Math.min(5, Math.ceil(pct / 20));
   }
-
-  /** 0–4 bars from WiFi RSSI dBm. */
   wifiBars(t: TelemetryData | null): number {
     const rssi = t?.wifiRssiDb;
     if (rssi == null) return -1;
@@ -107,27 +159,6 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     if (rssi >= -80) return 1;
     return 0;
   }
-
-  memoryPercent(): number | null {
-    const info = this.systemInfo();
-    return info?.memoryUsedPercent ?? null;
-  }
-
-  toggleMicStream() {
-    if (this.sound.micStreamActive()) {
-      this.sound.stopMicStream();
-    } else {
-      this.sound.startMicStream();
-    }
-  }
-
-  toggleVoiceToRover() {
-    if (this.sound.voiceToRoverActive()) {
-      this.sound.stopVoiceToRover();
-    } else {
-      this.sound.startVoiceToRover().catch((err) => {
-        console.error('[Operator] Voice start failed:', err);
-      });
-    }
-  }
+  memoryPercent(): number | null { return this.systemInfo()?.memoryUsedPercent ?? null; }
+  wifiDisplay(t: TelemetryData | null): string { return wifiRssiToLabelAndDb(t?.wifiRssiDb); }
 }

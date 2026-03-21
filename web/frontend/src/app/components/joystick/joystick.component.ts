@@ -15,18 +15,28 @@ export class JoystickComponent implements AfterViewInit, OnDestroy {
   stop = output<void>();
 
   stick = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+  /** Max stick translation (px); tied to pad size so CSS scaling stays aligned with math. */
+  stickMaxPx = signal(70);
   active = signal(false);
 
   private center = { x: 0, y: 0 };
   private radius = 0;
   private pointerId: number | null = null;
+  private resizeObserver: ResizeObserver | null = null;
 
   ngAfterViewInit() {
     const el = this.padRef?.nativeElement;
     if (!el) return;
-    const rect = el.getBoundingClientRect();
-    this.radius = Math.min(rect.width, rect.height) / 2 - 35;
-    this.center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+
+    this.readGeometry();
+
+    this.resizeObserver = new ResizeObserver(() => this.readGeometry());
+    this.resizeObserver.observe(el);
+    window.addEventListener('resize', this.onLayoutChange);
+    window.addEventListener('scroll', this.onLayoutChange, true);
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', this.onLayoutChange);
+    vv?.addEventListener('scroll', this.onLayoutChange);
 
     el.addEventListener('pointerdown', this.onDown);
     window.addEventListener('pointermove', this.onMove);
@@ -36,16 +46,29 @@ export class JoystickComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     const el = this.padRef?.nativeElement;
-    if (el) el.removeEventListener('pointerdown', this.onDown);
+    if (el) {
+      el.removeEventListener('pointerdown', this.onDown);
+      this.resizeObserver?.unobserve(el);
+    }
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
+    window.removeEventListener('resize', this.onLayoutChange);
+    window.removeEventListener('scroll', this.onLayoutChange, true);
+    const vv = window.visualViewport;
+    vv?.removeEventListener('resize', this.onLayoutChange);
+    vv?.removeEventListener('scroll', this.onLayoutChange);
     window.removeEventListener('pointermove', this.onMove);
     window.removeEventListener('pointerup', this.onUp);
     window.removeEventListener('pointercancel', this.onUp);
   }
 
+  private onLayoutChange = () => this.readGeometry();
+
   private onDown = (e: PointerEvent) => {
     this.pointerId = e.pointerId;
     this.active.set(true);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    this.readGeometry();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     this.update(e);
   };
 
@@ -61,7 +84,19 @@ export class JoystickComponent implements AfterViewInit, OnDestroy {
     this.stop.emit();
   };
 
+  /** Sync center/radius with the pad’s current screen box (fixes stale math after resize, scroll, mobile UI). */
+  private readGeometry() {
+    const el = this.padRef?.nativeElement;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const r = Math.min(rect.width, rect.height);
+    this.center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    this.radius = Math.max(24, r / 2 - 35);
+    this.stickMaxPx.set(Math.max(24, r / 2 - 30));
+  }
+
   private update(e: PointerEvent) {
+    this.readGeometry();
     const dx = e.clientX - this.center.x;
     const dy = e.clientY - this.center.y;
     const dist = Math.sqrt(dx * dx + dy * dy);

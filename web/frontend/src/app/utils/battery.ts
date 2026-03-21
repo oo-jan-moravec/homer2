@@ -1,12 +1,11 @@
-/** Maps battery voltage (V) to approximate charge percentage for Li-ion/LiPo. */
+/**
+ * Maps pack voltage (V) to approximate charge % for an 11-cell NiMH stack
+ * (~11 V empty … ~15.1 V full resting). Tune endpoints if your chemistry differs.
+ */
 export function batteryVoltageToPercent(v: number): number {
-  if (v >= 12.6) return 100;
-  if (v >= 12.2) return 90;
-  if (v >= 11.7) return 75;
-  if (v >= 11.3) return 60;
-  if (v >= 10.8) return 50;
-  if (v >= 10.4) return 35;
-  if (v >= 9.9) return 20;
-  if (v >= 9.45) return 10;
-  return 0;
+  const vEmpty = 11.0;
+  const vFull = 15.1;
+  if (v <= vEmpty) return 0;
+  if (v >= vFull) return 100;
+  return Math.round(((v - vEmpty) / (vFull - vEmpty)) * 100);
 }

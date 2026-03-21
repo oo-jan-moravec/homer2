@@ -4,7 +4,7 @@ namespace RoverOperatorApi.Services;
 
 /// <summary>
 /// Thread-safe store for the most recent telemetry from the rover.
-/// Updated by TelemetryBackgroundService, read by LcdAutoUpdateBackgroundService.
+/// Updated when a telemetry CSV line arrives from the rover serial ingress, read by LcdAutoUpdateBackgroundService.
 /// </summary>
 public interface ILatestTelemetryStore
 {

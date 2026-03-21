@@ -1,4 +1,9 @@
 <div class="joystick" #pad>
   <div class="base"></div>
-  <div class="stick" [style.transform]="'translate(' + (stick().x * 70) + 'px, ' + (stick().y * 70) + 'px)'"></div>
+  <div
+    class="stick"
+    [style.transform]="
+      'translate(' + stick().x * stickMaxPx() + 'px, ' + stick().y * stickMaxPx() + 'px)'
+    "
+  ></div>
 </div>

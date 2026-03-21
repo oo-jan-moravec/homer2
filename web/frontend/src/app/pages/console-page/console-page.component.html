@@ -7,6 +7,30 @@
   </header>
 
   <div class="grid">
+    <section class="panel tile-panel tile-video">
+      <h3>CAMERA</h3>
+      <div class="tile-frame">
+        <img
+          *ngIf="camSrc()"
+          [src]="camSrc()!"
+          alt="Rover camera"
+          class="tile-stream"
+          (error)="onStreamError()"
+        />
+        <div class="tile-placeholder" *ngIf="!camSrc()">
+          <span>NO STREAM</span>
+          <button type="button" (click)="retryStream()">RETRY</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel tile-panel tile-joystick">
+      <h3>DRIVE</h3>
+      <div class="tile-joystick-inner">
+        <app-joystick (move)="onJoystickMove($event)" (stop)="onJoystickStop()" />
+      </div>
+    </section>
+
     <section class="panel status-panel">
       <h3>STATUS</h3>
       <pre>serial:    {{ status()?.serialConnected ? 'OK' : '--' }}

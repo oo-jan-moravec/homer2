@@ -63,6 +63,16 @@ public class RoverController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Drive send counts, lock timeouts, and optional TX/RX trace. Enable <c>Rover:SerialTrace</c> for Recent lines.
+    /// Use while reproducing flaky joystick/console drive (watch driveLockTimeouts).
+    /// </summary>
+    [HttpGet("serial-debug")]
+    public IActionResult GetSerialDebug()
+    {
+        return Ok(_serial.GetSerialDebug());
+    }
+
     /// <summary>Request one telemetry snapshot (REST fallback; use SignalR for streaming).</summary>
     [HttpGet("telemetry")]
     public IActionResult GetTelemetry(CancellationToken ct)

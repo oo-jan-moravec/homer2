@@ -6,12 +6,15 @@
       <button type="button" (click)="retryStream()">START STREAM</button>
     </div>
 
+    <!-- Top HUD -->
     <div class="telem-overlay">
       <div class="telem-chips">
         <div class="telem-chip telem-bars telem-battery">
           <span class="label">BAT</span>
-          <span class="bars" [class.unknown]="batteryBars(telemetry()) < 0" title="{{ batteryPercent(telemetry()) != null ? batteryPercent(telemetry()) + '%' : '--' }}">
-            <span *ngFor="let i of batteryBarCount" class="bar" [class.filled]="batteryBars(telemetry()) >= 0 && i <= batteryBars(telemetry())"></span>
+          <span class="bars" [class.unknown]="batteryBars(telemetry()) < 0"
+            title="{{ batteryPercent(telemetry()) != null ? batteryPercent(telemetry()) + '%' : '--' }}">
+            <span *ngFor="let i of batteryBarCount" class="bar"
+              [class.filled]="batteryBars(telemetry()) >= 0 && i <= batteryBars(telemetry())"></span>
           </span>
         </div>
         <div class="telem-chip">
@@ -31,7 +34,8 @@
         </div>
         <div class="telem-chip telem-bars telem-wifi">
           <span class="label">WIFI</span>
-          <span class="bars" [class.unknown]="wifiBars(telemetry()) < 0" title="{{ telemetry()?.wifiRssiDb != null ? telemetry()!.wifiRssiDb + ' dBm' : '--' }}">
+          <span class="bars" [class.unknown]="wifiBars(telemetry()) < 0"
+            title="{{ telemetry()?.wifiRssiDb != null ? telemetry()!.wifiRssiDb + ' dBm' : '--' }}">
             <span *ngFor="let i of wifiBarCount" class="bar" [class.filled]="i <= wifiBars(telemetry())"></span>
           </span>
         </div>
@@ -54,15 +58,138 @@
           <span class="switch-label">VOICE</span>
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>
+        <div class="telem-switch" [class.active]="consoleVisible()" (click)="consoleVisible.set(!consoleVisible())" title="Technical console">
+          <span class="switch-label">CONSOLE</span>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </div>
       </div>
     </div>
 
+    <!-- Joystick -->
     <div class="joystick-overlay">
       <span class="label">DRIVE</span>
-      <app-joystick
-        (move)="onJoystickMove($event)"
-        (stop)="onJoystickStop()"
-      ></app-joystick>
+      <app-joystick (move)="onJoystickMove($event)" (stop)="onJoystickStop()"></app-joystick>
+    </div>
+
+    <!-- Console overlay -->
+    <div class="console-overlay" [class.visible]="consoleVisible()">
+      <div class="console-header">
+        <span class="console-prompt">homer2&gt;</span>
+        <span class="console-title">ROVER TECHNICAL CONSOLE</span>
+        <span class="console-status" [class.online]="status()?.serialConnected">
+          SERIAL: {{ status()?.serialConnected ? 'ON' : 'OFF' }}
+        </span>
+        <span class="console-status" [class.online]="signalrConnected()">
+          SIGNALR: {{ signalrConnected() ? 'ON' : 'OFF' }}
+        </span>
+        <button class="console-close" (click)="consoleVisible.set(false)" title="Close">✕</button>
+      </div>
+
+      <div class="console-grid">
+
+        <section class="cpanel">
+          <h3>STATUS</h3>
+          <pre>serial: {{ status()?.serialConnected ? 'OK' : '--' }}
+lcd:    {{ status()?.lcdAvailable ? 'OK' : '--' }}
+ir:     {{ status()?.irAvailable ? 'OK' : '--' }} {{ status()?.irOn ? '(ON)' : '(OFF)' }}
+camera: {{ status()?.cameraAvailable ? 'OK' : '--' }}
+ts:     {{ status()?.timestamp ?? '--' }}</pre>
+          <button type="button" (click)="refreshStatus()">REFRESH</button>
+        </section>
+
+        <section class="cpanel">
+          <h3>SYSTEM</h3>
+          <pre *ngIf="systemInfo()">host:  {{ systemInfo()!.hostname }}
+ip:    {{ (systemInfo()!.ipAddresses || []).join(', ') || '--' }}
+uptime: {{ systemInfo()!.uptime }}
+cpu:   {{ systemInfo()!.cpuTempC ?? '--' }}°C
+load:  {{ systemInfo()!.loadAverage }}
+mem:   {{ systemInfo()!.memoryUsedMb }}/{{ systemInfo()!.memoryTotalMb }} MB
+disk:  {{ systemInfo()!.diskFreeGb ?? '--' }}/{{ systemInfo()!.diskTotalGb ?? '--' }} GB</pre>
+          <pre *ngIf="!systemInfo()">waiting...</pre>
+          <button type="button" (click)="refreshSystemInfo()">REFRESH</button>
+        </section>
+
+        <section class="cpanel">
+          <h3>TELEMETRY</h3>
+          <pre *ngIf="telemetry()">LE:   {{ telemetry()!.leftEdges }}
+RE:   {{ telemetry()!.rightEdges }}
+dist: {{ telemetry()!.distanceMm }} mm
+vL:   {{ telemetry()!.velocityLeftMmps }} mm/s
+vR:   {{ telemetry()!.velocityRightMmps }} mm/s
+bat:  {{ telemetry()!.batteryVoltage | number:'1.2-2' }} V ({{ batteryPercent(telemetry()) }}%)
+wifi: {{ wifiDisplay(telemetry()) }}
+ping: {{ telemetry()!.pingMs != null ? telemetry()!.pingMs + ' ms' : '--' }}</pre>
+          <pre *ngIf="!telemetry()">waiting...</pre>
+        </section>
+
+        <section class="cpanel">
+          <h3>LCD</h3>
+          <label><input type="checkbox" [ngModel]="lcdAutoEnabled" (ngModelChange)="onLcdAutoChange($event)" /> periodic status</label>
+          <input type="text" [(ngModel)]="lcdLine1" placeholder="line 1 (16ch)" maxlength="16" />
+          <input type="text" [(ngModel)]="lcdLine2" placeholder="line 2 (16ch)" maxlength="16" />
+          <div class="cbtns">
+            <button type="button" (click)="setLcd()">SET</button>
+            <button type="button" (click)="clearLcd()">CLEAR</button>
+          </div>
+        </section>
+
+        <section class="cpanel">
+          <h3>IR LED</h3>
+          <div class="cbtns">
+            <button type="button" (click)="toggleIr()">TOGGLE</button>
+            <button type="button" (click)="setIr(true)">ON</button>
+            <button type="button" (click)="setIr(false)">OFF</button>
+          </div>
+        </section>
+
+        <section class="cpanel">
+          <h3>DRIVE (MANUAL)</h3>
+          <div class="bearing-row">
+            <button type="button" (click)="manualBearing=0; manualVel=5; sendManualDrive()">^</button>
+          </div>
+          <div class="bearing-row">
+            <button type="button" (click)="manualBearing=270; manualVel=5; sendManualDrive()">&lt;</button>
+            <button type="button" (click)="stopManualDrive()">STOP</button>
+            <button type="button" (click)="manualBearing=90; manualVel=5; sendManualDrive()">&gt;</button>
+          </div>
+          <div class="bearing-row">
+            <button type="button" (click)="manualBearing=180; manualVel=5; sendManualDrive()">v</button>
+          </div>
+          <div class="vel-row">
+            <label>VEL:</label>
+            <input type="range" min="0" max="9" [(ngModel)]="manualVel" (input)="sendManualDrive()" />
+            <span>{{ manualVel }}</span>
+          </div>
+        </section>
+
+        <section class="cpanel">
+          <h3>ENCODER CORRECTION</h3>
+          <label><input type="checkbox" [(ngModel)]="encEnabled" /> enabled</label>
+          <label>kp: <input type="number" min="1" max="100" [(ngModel)]="encKp" /></label>
+          <label>max: <input type="number" min="1" max="255" [(ngModel)]="encMax" /></label>
+          <div class="cbtns">
+            <button type="button" (click)="setEncConfig()">APPLY</button>
+            <button type="button" (click)="resetEncoders()">RESET ENC</button>
+          </div>
+        </section>
+
+        <section class="cpanel">
+          <h3>VIDEO QUALITY</h3>
+          <p class="cdesc">Takes effect when stream restarts.</p>
+          <label>preset:
+            <select [(ngModel)]="videoQualityPreset" (ngModelChange)="onVideoQualityChange($event)">
+              <option value="1080p">1080p</option>
+              <option value="720p">720p</option>
+              <option value="480p">480p (default)</option>
+              <option value="240p">240p</option>
+            </select>
+          </label>
+        </section>
+
+      </div>
+
+      <div class="console-footer" *ngIf="consoleMessage()">{{ consoleMessage() }}</div>
     </div>
   </div>
 </div>

@@ -19,7 +19,6 @@ public class DriveHub : Hub
 
     public Task Drive(DriveCommand cmd)
     {
-        TelemetryBackgroundService.NotifyDriveActive();
         _serial.SendDrive(cmd.Bearing, cmd.Velocity);
         return Task.CompletedTask;
     }

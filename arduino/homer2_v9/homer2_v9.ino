@@ -53,7 +53,7 @@
 #include <math.h>
 
 //================ VERSION 9 =================
-const char VERSION[] = "9"; // 2026-03-21.1
+const char VERSION[] = "9"; // 2026-03-21.3
 
 // Unsolicited telemetry interval (host can listen without sending T)
 const unsigned long AUTO_TELEM_MS = 5000;
@@ -284,12 +284,8 @@ static void bearingVelocityToLR(int bearing, int velocity, int16_t *outL, int16_
   // scale 0-9 -> 0-150 (cap to avoid overheating)
   int v = map(velocity, 0, 9, 0, 150);
   float rad = (float)bearing * (PI / 180.0f);
-  // Skid-steer: 0=fwd, 90=turn right, 180=back, 270=turn left (matches host joystick).
-  // Use left=fwd+sin, right=fwd-sin so bearing 90 speeds left wheel / slows right (yaw right).
-  float turn = sin(rad);
-  float fwd  = cos(rad);
-  float left  = fwd + turn;
-  float right = fwd - turn;
+  float left  = cos(rad) - sin(rad);
+  float right = cos(rad) + sin(rad);
   float mag = max((float)fabs(left), (float)fabs(right));
   if (mag > 1e-6f) {
     left  /= mag;

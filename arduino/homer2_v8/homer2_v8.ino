@@ -279,11 +279,8 @@ static void bearingVelocityToLR(int bearing, int velocity, int16_t *outL, int16_
   // scale 0-9 -> 0-150 (cap to avoid overheating)
   int v = map(velocity, 0, 9, 0, 150);
   float rad = (float)bearing * (PI / 180.0f);
-  // Skid-steer: 0=fwd, 90=turn right, 180=back, 270=turn left (matches host joystick).
-  float turn = sin(rad);
-  float fwd  = cos(rad);
-  float left  = fwd + turn;
-  float right = fwd - turn;
+  float left  = cos(rad) - sin(rad);
+  float right = cos(rad) + sin(rad);
   float mag = max((float)fabs(left), (float)fabs(right));
   if (mag > 1e-6f) {
     left  /= mag;

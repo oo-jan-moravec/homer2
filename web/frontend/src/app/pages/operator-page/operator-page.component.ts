@@ -31,7 +31,7 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   systemInfo = signal<SystemInfo | null>(null);
 
   // Console overlay
-  consoleVisible = signal(false);
+  infoOverlayVisible = signal(false);
   status = signal<RoverStatus | null>(null);
   consoleMessage = signal('');
   videoQualityPreset = '480p';
@@ -88,7 +88,9 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   onStreamError() { this.camSrc.set(null); }
   retryStream() { this.camSrc.set(this.api.getCameraStreamUrl()); }
 
-  toggleIr() { this.api.toggleIr().subscribe({ next: r => this.irOn.set(r.on) }); }
+  toggleIr() {
+    this.api.toggleIr().subscribe({ next: r => this.applyIrState(r.on) });
+  }
 
   toggleMicStream() {
     if (this.sound.micStreamActive()) this.sound.stopMicStream();
@@ -117,7 +119,15 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   }
 
   // Console: IR
-  setIr(on: boolean) { this.api.setIr(on).subscribe({ next: r => this.irOn.set(r.on) }); }
+  setIr(on: boolean) {
+    this.api.setIr(on).subscribe({ next: r => this.applyIrState(r.on) });
+  }
+
+  private applyIrState(on: boolean) {
+    this.irOn.set(on);
+    const s = this.status();
+    if (s) this.status.set({ ...s, irOn: on });
+  }
 
   // Console: video quality
   onVideoQualityChange(preset: string) {

@@ -124,6 +124,21 @@
         <p class="ihint">restart stream to apply</p>
       </div>
 
+      <div class="info-panel debug-panel">
+        <div class="ititle">DEBUG</div>
+        <div class="irow"><span class="ik">joy</span><span class="iv">b={{ lastBearing() }} v={{ lastVelocity() }}</span></div>
+        <div class="irow"><span class="ik">sends</span><span class="iv">{{ serialDebug()?.driveSends ?? '--' }}</span></div>
+        <div class="irow"><span class="ik">lockTO</span><span class="iv" [class.warn]="(serialDebug()?.driveLockTimeouts ?? 0) > 0">{{ serialDebug()?.driveLockTimeouts ?? '--' }}</span></div>
+        <div class="isep"></div>
+        <div class="debug-trace">
+          <div *ngFor="let t of serialDebug()?.recent?.slice(-20) ?? []" class="trace-line">
+            <span class="trace-dir" [class.tx]="t.dir === 'tx'" [class.rx]="t.dir === 'rx'">{{ t.dir }}</span>
+            <span class="trace-msg">{{ t.line }}</span>
+          </div>
+          <div *ngIf="!serialDebug()?.recent?.length" class="trace-line"><span class="trace-msg dim">no trace (enable SerialTrace in config)</span></div>
+        </div>
+      </div>
+
       </div>
     </div>
   </div>

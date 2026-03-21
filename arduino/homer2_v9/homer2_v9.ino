@@ -53,7 +53,10 @@
 #include <math.h>
 
 //================ VERSION 9 =================
-const char VERSION[] = "9"; // 2026-03-21.3
+const char VERSION[] = "9.3";
+
+// Print computed motor values for every drive command to Serial (disable for production)
+#define DEBUG_DRIVE 1
 
 // Unsolicited telemetry interval (host can listen without sending T)
 const unsigned long AUTO_TELEM_MS = 5000;
@@ -98,7 +101,7 @@ int lastBearing = -1;  // from last command; -1 = not straight mode
 // ----- Straight-line encoder correction (bearing 0 or 180 only) -----
 // Protocol: ENC 0 = off, ENC 1 = on (defaults), ENC 1 <kp> <max> = on with params
 const unsigned long STRAIGHT_SAMPLE_MS = 50;
-static bool encCorrectionEnabled = true;
+static bool encCorrectionEnabled = false;
 static int encKp = 50;   // P gain: lower = gentler
 static int encMax = 35;  // cap to avoid overshoot
 
@@ -375,12 +378,32 @@ void loop() {
       } else {
         Serial.println("ERR ENC parse");
       }
+    } else if (line[0] == 'M' && (line[1] == 'L' || line[1] == 'l' || line[1] == 'R' || line[1] == 'r')) {
+      int val = 0;
+      sscanf(line + 2, "%d", &val);
+      val = constrain(val, -150, 150);
+      lastCmdMs = millis();
+      if (line[1] == 'L' || line[1] == 'l') {
+        setLeft(val);
+        targetL = val; targetR = 0;
+        Serial.print("#ML "); Serial.println(val);
+      } else {
+        setRight(val);
+        targetL = 0; targetR = val;
+        Serial.print("#MR "); Serial.println(val);
+      }
     } else if (sscanf(line, "%d %d", &bearing, &velocity) == 2) {
       bearing = constrain(bearing, 0, 359);
       velocity = constrain(velocity, 0, 9);
       lastBearing = bearing;
       bearingVelocityToLR(bearing, velocity, &targetL, &targetR);
       lastCmdMs = millis();
+#if DEBUG_DRIVE
+      Serial.print("#D b="); Serial.print(bearing);
+      Serial.print(" v="); Serial.print(velocity);
+      Serial.print(" L="); Serial.print(targetL);
+      Serial.print(" R="); Serial.println(targetR);
+#endif
     } else {
       Serial.println("ERR parse");
     }

@@ -241,8 +241,8 @@ $border: #1f2937;
 .info-panel {
   position: relative;
   flex-shrink: 0;
-  background: rgba(13, 17, 23, 0.78);
-  border: 1px solid $border;
+  background: rgba(13, 17, 23, 0.55);
+  border: 1px solid rgba($border, 0.6);
   padding: 0.55rem 0.7rem;
   font-size: 11px;
   line-height: 1.55;
@@ -350,6 +350,47 @@ $border: #1f2937;
   font-size: 9px;
   letter-spacing: 0.08em;
   color: $fg-dim;
+}
+
+// ── Debug panel ──────────────────────────────────────────────────────────────
+
+.debug-panel {
+  .iv.warn { color: #ff4444; }
+}
+
+.debug-trace {
+  max-height: 12rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.trace-line {
+  display: flex;
+  gap: 0.4rem;
+  font-size: 9.5px;
+  line-height: 1.45;
+  font-family: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trace-dir {
+  flex-shrink: 0;
+  width: 1.3rem;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  &.tx { color: #ff9800; }
+  &.rx { color: $fg; }
+}
+
+.trace-msg {
+  color: rgba($fg, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.dim { color: $fg-dim; font-style: italic; }
 }
 
 .ibtns {

@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RoverApiService, RoverStatus, SystemInfo, TelemetryData } from '../../services/rover-api.service';
+import { RoverApiService, RoverStatus, SystemInfo, TelemetryData, SerialDebugSnapshot } from '../../services/rover-api.service';
 import { RoverSignalRService } from '../../services/rover-signalr.service';
 import { SoundService } from '../../services/sound.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
@@ -44,7 +44,12 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   manualBearing = 0;
   manualVel = 0;
 
+  lastBearing = signal(0);
+  lastVelocity = signal(0);
+  serialDebug = signal<SerialDebugSnapshot | null>(null);
+
   private systemInfoInterval?: ReturnType<typeof setInterval>;
+  private debugInterval?: ReturnType<typeof setInterval>;
 
   ngOnInit() {
     this.signalr.connect().catch(() => {});
@@ -60,10 +65,14 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     this.systemInfoInterval = setInterval(() => this.refreshSystemInfo(), 30_000);
     this.api.getLcdAutoEnabled().subscribe({ next: r => this.lcdAutoEnabled = r.enabled, error: () => {} });
     this.api.getCameraQuality().subscribe({ next: r => this.videoQualityPreset = r.preset ?? '480p', error: () => {} });
+    this.debugInterval = setInterval(() => {
+      if (this.infoOverlayVisible()) this.refreshDebug();
+    }, 1500);
   }
 
   ngOnDestroy() {
     if (this.systemInfoInterval) clearInterval(this.systemInfoInterval);
+    if (this.debugInterval) clearInterval(this.debugInterval);
     this.camSrc.set(null);
     this.signalr.stopDrive();
     this.sound.stopMicStream();
@@ -81,9 +90,23 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     this.api.getStatus().subscribe({ next: s => this.status.set(s) });
   }
 
+  refreshDebug() {
+    this.api.getSerialDebug().subscribe({
+      next: d => this.serialDebug.set(d),
+      error: () => {}
+    });
+  }
+
   // Joystick drive
-  onJoystickMove(e: { bearing: number; velocity: number }) { this.signalr.drive(e.bearing, e.velocity); }
-  onJoystickStop() { this.signalr.stopDrive(); }
+  onJoystickMove(e: { bearing: number; velocity: number }) {
+    this.lastBearing.set(e.bearing);
+    this.lastVelocity.set(e.velocity);
+    this.signalr.drive(e.bearing, e.velocity);
+  }
+  onJoystickStop() {
+    this.lastVelocity.set(0);
+    this.signalr.stopDrive();
+  }
 
   onStreamError() { this.camSrc.set(null); }
   retryStream() { this.camSrc.set(this.api.getCameraStreamUrl()); }

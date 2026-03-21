@@ -38,6 +38,20 @@ export interface TelemetryData {
   pingMs?: number | null;
 }
 
+export interface SerialTraceLine {
+  at: string;
+  dir: string;
+  line: string;
+}
+
+export interface SerialDebugSnapshot {
+  driveSends: number;
+  driveLockTimeouts: number;
+  telemetryReadTimeoutMs: number;
+  driveLockWaitMs: number;
+  recent: SerialTraceLine[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class RoverApiService {
   private http = inject(HttpClient);
@@ -106,5 +120,9 @@ export class RoverApiService {
 
   setLcdAutoEnabled(enabled: boolean): Observable<{ enabled: boolean }> {
     return this.http.post<{ enabled: boolean }>(`${this.base}/lcd/auto`, { enabled });
+  }
+
+  getSerialDebug(): Observable<SerialDebugSnapshot> {
+    return this.http.get<SerialDebugSnapshot>(`${this.base}/serial-debug`);
   }
 }

@@ -109,3 +109,5 @@ publish-out/
 
 # Angular → backend wwwroot (build output)
 web/backend/wwwroot/
+
+web/backend/publish-test

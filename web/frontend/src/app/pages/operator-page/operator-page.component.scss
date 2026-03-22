@@ -211,7 +211,7 @@ $border: #1f2937;
   .label { font-size: 10px; color: $fg-dim; letter-spacing: 0.15em; }
 }
 
-// ── Console: one left column, same lime as telem-chip / HUD ───────────────────
+// ── INFO overlay: bordered tiles, no fill; flex-wrap so tiles flow to next row ─
 
 .info-panels {
   pointer-events: none;
@@ -228,26 +228,32 @@ $border: #1f2937;
   position: absolute;
   top: 3.5rem;
   left: 0.75rem;
-  width: min(17rem, calc(100vw - 11rem));
+  width: calc(100% - 12rem);
+  max-width: calc(100vw - 12rem);
   max-height: calc(100% - 5rem);
   overflow-x: hidden;
   overflow-y: auto;
   display: flex;
-  flex-direction: column;
+  flex-flow: row wrap;
+  align-content: flex-start;
+  align-items: flex-start;
   gap: 0.45rem;
   pointer-events: none;
 }
 
 .info-panel {
   position: relative;
-  flex-shrink: 0;
-  background: rgba(13, 17, 23, 0.55);
-  border: 1px solid rgba($border, 0.6);
+  flex: 0 1 auto;
+  background: transparent;
+  border: 1px solid $fg;
   padding: 0.55rem 0.7rem;
   font-size: 11px;
   line-height: 1.55;
-  width: 100%;
   box-sizing: border-box;
+  min-width: min(10.5rem, 100%);
+  max-width: min(17rem, 100%);
+  color: $fg;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.95);
 }
 
 .irow {
@@ -256,9 +262,9 @@ $border: #1f2937;
   align-items: baseline;
 }
 
-/* Match telem-chip: .label = $fg-dim, .value = $fg */
 .ik {
-  color: $fg-dim;
+  color: $fg;
+  opacity: 0.85;
   min-width: 4rem;
   flex-shrink: 0;
   letter-spacing: 0.08em;
@@ -269,16 +275,16 @@ $border: #1f2937;
   font-weight: 600;
 
   &.ok { color: $fg; }
-  &:not(.ok) { color: $fg-dim; }
+  &:not(.ok) { opacity: 0.75; }
 }
 
 .ion { color: $fg; font-weight: 600; }
 
-.iu { color: $fg-dim; font-size: 10px; }
+.iu { color: $fg; opacity: 0.8; font-size: 10px; }
 
 .isep {
-  height: 1px;
-  background: rgba($fg, 0.2);
+  height: 0;
+  border-top: 1px solid color.adjust($fg, $alpha: -0.55);
   margin: 0.3rem 0;
 }
 
@@ -290,7 +296,7 @@ $border: #1f2937;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.15em;
-  color: $fg-dim;
+  color: $fg;
   margin-bottom: 0.45rem;
 }
 
@@ -349,7 +355,101 @@ $border: #1f2937;
   margin: 0.35rem 0 0 0;
   font-size: 9px;
   letter-spacing: 0.08em;
-  color: $fg-dim;
+  color: $fg;
+  opacity: 0.8;
+}
+
+// ── WiFi survey (INFO overlay) ───────────────────────────────────────────────
+
+.wifi-survey-panel {
+  .wifi-survey-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.6rem;
+    align-items: baseline;
+    margin-bottom: 0.4rem;
+    font-size: 9.5px;
+    line-height: 1.4;
+  }
+
+  .wifi-loading {
+    color: $fg;
+    opacity: 0.85;
+    font-style: italic;
+    letter-spacing: 0.06em;
+  }
+
+  .wifi-err {
+    color: #ff6b6b;
+    flex: 1 1 100%;
+    word-break: break-word;
+  }
+
+  .wifi-iface {
+    color: $fg;
+    font-weight: 600;
+  }
+
+  .wifi-cur-ssid {
+    color: $fg;
+    opacity: 0.85;
+    letter-spacing: 0.04em;
+  }
+
+  .wifi-ap-list {
+    max-height: 11rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 0.25rem;
+  }
+
+  .wifi-ap-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.28rem 0.4rem;
+    background: transparent;
+    border: 1px solid color.adjust($fg, $alpha: -0.45);
+    border-radius: 2px;
+    font-size: 10px;
+
+    &.current {
+      border-color: $fg;
+      box-shadow: 0 0 4px color.adjust($fg, $alpha: -0.7);
+
+      .wifi-ap-ssid { color: $fg; font-weight: 700; }
+      .wifi-ap-sig { color: $fg; }
+    }
+  }
+
+  .wifi-ap-ssid {
+    color: $fg;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .wifi-ap-sig {
+    flex-shrink: 0;
+    color: $fg;
+    opacity: 0.9;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wifi-empty {
+    margin: 0.35rem 0 0 0;
+    font-size: 9.5px;
+    color: $fg;
+    opacity: 0.8;
+    font-style: italic;
+  }
 }
 
 // ── Debug panel ──────────────────────────────────────────────────────────────
@@ -386,11 +486,12 @@ $border: #1f2937;
 }
 
 .trace-msg {
-  color: rgba($fg, 0.85);
+  color: $fg;
+  opacity: 0.92;
   overflow: hidden;
   text-overflow: ellipsis;
 
-  &.dim { color: $fg-dim; font-style: italic; }
+  &.dim { opacity: 0.65; font-style: italic; }
 }
 
 .ibtns {

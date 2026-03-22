@@ -44,6 +44,21 @@ export interface SerialTraceLine {
   line: string;
 }
 
+export interface WifiApEntry {
+  bssid: string;
+  ssid?: string | null;
+  freqMHz?: number | null;
+  signalDbm?: number | null;
+}
+
+export interface WifiSurvey {
+  iface?: string | null;
+  currentBssid?: string | null;
+  currentSsid?: string | null;
+  accessPoints: WifiApEntry[];
+  error?: string | null;
+}
+
 export interface SerialDebugSnapshot {
   driveSends: number;
   driveLockTimeouts: number;
@@ -65,6 +80,11 @@ export class RoverApiService {
 
   getSystemInfo(): Observable<SystemInfo> {
     return this.http.get<SystemInfo>(`${this.base}/sysinfo`);
+  }
+
+  /** Linux rover only: runs `iw dev … scan`; may take a few seconds. */
+  getWifiSurvey(): Observable<WifiSurvey> {
+    return this.http.get<WifiSurvey>(`${this.base}/wifi-survey`);
   }
 
   getTelemetry(): Observable<TelemetryData> {

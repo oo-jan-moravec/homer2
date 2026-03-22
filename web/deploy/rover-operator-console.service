@@ -12,6 +12,8 @@ Environment=ASPNETCORE_ENVIRONMENT=Production
 
 User=__SERVICE_USER__
 Group=__SERVICE_USER__
+# Allow `iw dev … scan` without root (subprocess inherits ambient set).
+AmbientCapabilities=CAP_NET_ADMIN
 
 [Install]
 WantedBy=multi-user.target

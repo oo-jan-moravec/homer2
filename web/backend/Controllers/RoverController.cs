@@ -16,6 +16,7 @@ public class RoverController : ControllerBase
     private readonly IVideoQualityService _videoQuality;
     private readonly IAudioStreamService _audioStream;
     private readonly ISystemInfoService _systemInfo;
+    private readonly IWifiSurveyService _wifiSurvey;
     private readonly ILcdAutoUpdateService _lcdAutoUpdate;
 
     public RoverController(
@@ -27,6 +28,7 @@ public class RoverController : ControllerBase
         IVideoQualityService videoQuality,
         IAudioStreamService audioStream,
         ISystemInfoService systemInfo,
+        IWifiSurveyService wifiSurvey,
         ILcdAutoUpdateService lcdAutoUpdate)
     {
         _serial = serial;
@@ -37,6 +39,7 @@ public class RoverController : ControllerBase
         _videoQuality = videoQuality;
         _audioStream = audioStream;
         _systemInfo = systemInfo;
+        _wifiSurvey = wifiSurvey;
         _lcdAutoUpdate = lcdAutoUpdate;
     }
 
@@ -45,6 +48,17 @@ public class RoverController : ControllerBase
     public IActionResult GetSystemInfo()
     {
         return Ok(_systemInfo.GetSystemInfo());
+    }
+
+    /// <summary>
+    /// Trigger a WiFi scan on the rover (Linux + <c>iw</c>) and list visible BSSIDs with signal.
+    /// Current association is highlighted in the UI via <see cref="WifiSurveyDto.CurrentBssid"/>.
+    /// </summary>
+    [HttpGet("wifi-survey")]
+    public async Task<IActionResult> GetWifiSurvey(CancellationToken ct)
+    {
+        var survey = await _wifiSurvey.GetSurveyAsync(ct);
+        return Ok(survey);
     }
 
     /// <summary>Overall status: serial connected, hardware availability.</summary>

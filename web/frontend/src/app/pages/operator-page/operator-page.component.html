@@ -71,7 +71,7 @@
       <app-joystick (move)="onJoystickMove($event)" (stop)="onJoystickStop()"></app-joystick>
     </div>
 
-    <!-- Console: single left column, app lime palette -->
+    <!-- INFO: bordered tiles, flex-wrap over video -->
     <div class="info-panels" [class.visible]="infoOverlayVisible()">
       <div class="console-column">
 
@@ -98,6 +98,29 @@
         <div class="irow"><span class="ik">bat</span><span class="iv">{{ (telemetry()?.batteryVoltage | number:'1.2-2') ?? '--' }} <span class="iu">V</span> ({{ batteryPercent(telemetry()) ?? '--' }}%)</span></div>
         <div class="irow"><span class="ik">wifi</span><span class="iv">{{ telemetry()?.wifiRssiDb ?? '--' }} <span class="iu">dBm</span></span></div>
         <div class="irow"><span class="ik">ping</span><span class="iv">{{ telemetry()?.pingMs ?? '--' }} <span class="iu">ms</span></span></div>
+      </div>
+
+      <div class="info-panel panel-interactive wifi-survey-panel">
+        <div class="ititle">WIFI SCAN</div>
+        <div class="wifi-survey-meta">
+          <span *ngIf="wifiSurveyLoading()" class="wifi-loading">scanning…</span>
+          <ng-container *ngIf="wifiSurvey() as ws">
+            <span *ngIf="!wifiSurveyLoading() && ws.error" class="wifi-err">{{ ws.error }}</span>
+            <span *ngIf="!wifiSurveyLoading() && !ws.error && ws.iface" class="wifi-iface">{{ ws.iface }}</span>
+            <span *ngIf="ws.currentSsid" class="wifi-cur-ssid">assoc “{{ ws.currentSsid }}”</span>
+          </ng-container>
+        </div>
+        <div class="wifi-ap-list" *ngIf="wifiSurvey()?.accessPoints?.length">
+          <div
+            *ngFor="let ap of wifiSurvey()!.accessPoints"
+            class="wifi-ap-row"
+            [class.current]="isCurrentWifiAp(ap)"
+            [title]="wifiApTitle(ap)">
+            <span class="wifi-ap-ssid">{{ wifiApDisplaySsid(ap) }}</span>
+            <span class="wifi-ap-sig">{{ ap.signalDbm != null ? ap.signalDbm + ' dBm' : '—' }}</span>
+          </div>
+        </div>
+        <p *ngIf="!wifiSurveyLoading() && wifiSurvey() && !wifiSurvey()!.error && !(wifiSurvey()!.accessPoints?.length)" class="wifi-empty">No access points</p>
       </div>
 
       <div class="info-panel panel-interactive">

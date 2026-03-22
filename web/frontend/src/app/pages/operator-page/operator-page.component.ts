@@ -1,7 +1,7 @@
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RoverApiService, RoverStatus, SystemInfo, TelemetryData, SerialDebugSnapshot } from '../../services/rover-api.service';
+import { RoverApiService, RoverStatus, SystemInfo, TelemetryData, SerialDebugSnapshot, WifiSurvey, WifiApEntry } from '../../services/rover-api.service';
 import { RoverSignalRService } from '../../services/rover-signalr.service';
 import { SoundService } from '../../services/sound.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
@@ -47,9 +47,19 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   lastBearing = signal(0);
   lastVelocity = signal(0);
   serialDebug = signal<SerialDebugSnapshot | null>(null);
+  wifiSurvey = signal<WifiSurvey | null>(null);
+  wifiSurveyLoading = signal(false);
 
   private systemInfoInterval?: ReturnType<typeof setInterval>;
   private debugInterval?: ReturnType<typeof setInterval>;
+  private wifiSurveyInterval?: ReturnType<typeof setInterval>;
+  private wifiSurveyReqSeq = 0;
+
+  private readonly refreshWifiWhenInfoOpens = effect(() => {
+    if (this.infoOverlayVisible()) {
+      queueMicrotask(() => this.refreshWifiSurvey(true));
+    }
+  });
 
   ngOnInit() {
     this.signalr.connect().catch(() => {});
@@ -68,11 +78,15 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     this.debugInterval = setInterval(() => {
       if (this.infoOverlayVisible()) this.refreshDebug();
     }, 1500);
+    this.wifiSurveyInterval = setInterval(() => {
+      if (this.infoOverlayVisible()) this.refreshWifiSurvey();
+    }, 20_000);
   }
 
   ngOnDestroy() {
     if (this.systemInfoInterval) clearInterval(this.systemInfoInterval);
     if (this.debugInterval) clearInterval(this.debugInterval);
+    if (this.wifiSurveyInterval) clearInterval(this.wifiSurveyInterval);
     this.camSrc.set(null);
     this.signalr.stopDrive();
     this.sound.stopMicStream();
@@ -95,6 +109,45 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
       next: d => this.serialDebug.set(d),
       error: () => {}
     });
+  }
+
+  refreshWifiSurvey(force = false) {
+    if (!force && this.wifiSurveyLoading()) return;
+    const seq = ++this.wifiSurveyReqSeq;
+    this.wifiSurveyLoading.set(true);
+    const done = () => {
+      if (seq === this.wifiSurveyReqSeq) this.wifiSurveyLoading.set(false);
+    };
+    this.api.getWifiSurvey().subscribe({
+      next: s => {
+        if (seq === this.wifiSurveyReqSeq) this.wifiSurvey.set(s);
+        done();
+      },
+      error: () => {
+        if (seq === this.wifiSurveyReqSeq) {
+          this.wifiSurvey.set({
+            accessPoints: [],
+            error: 'WiFi survey request failed (offline or not supported on this host).'
+          });
+        }
+        done();
+      }
+    });
+  }
+
+  isCurrentWifiAp(ap: WifiApEntry): boolean {
+    const cur = this.wifiSurvey()?.currentBssid?.toLowerCase();
+    return !!cur && ap.bssid.toLowerCase() === cur;
+  }
+
+  wifiApDisplaySsid(ap: WifiApEntry): string {
+    const s = ap.ssid?.trim();
+    return s ? s : '(hidden)';
+  }
+
+  wifiApTitle(ap: WifiApEntry): string {
+    const mhz = ap.freqMHz != null ? ` @ ${ap.freqMHz} MHz` : '';
+    return `${ap.bssid}${mhz}`;
   }
 
   // Joystick drive

@@ -18,6 +18,7 @@ builder.Services.AddSingleton<IVideoQualityService, VideoQualityService>();
 builder.Services.AddSingleton<ICameraStreamService, CameraStreamService>();
 builder.Services.AddSingleton<IAudioStreamService, AudioStreamService>();
 builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
+builder.Services.AddSingleton<IWifiSurveyService, WifiSurveyService>();
 builder.Services.AddSingleton<ILcdAutoUpdateService, LcdAutoUpdateService>();
 builder.Services.AddHostedService<LcdAutoUpdateBackgroundService>();
 builder.Services.AddHostedService<TelemetryBackgroundService>();

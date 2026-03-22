@@ -6,9 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RoverOperatorApi</RootNamespace>
     <AssemblyName>RoverOperatorApi</AssemblyName>
-    <PublishSingleFile>true</PublishSingleFile>
+    <PublishSingleFile>false</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>

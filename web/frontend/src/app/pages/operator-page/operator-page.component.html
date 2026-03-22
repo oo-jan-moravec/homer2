@@ -1,4 +1,5 @@
 <div class="operator">
+  <ng-container *ngIf="operatorUnlocked(); else operatorGateTpl">
   <div class="video-viewport">
     <img *ngIf="camSrc()" [src]="camSrc()" alt="Rover camera" class="video-feed" (error)="onStreamError()" />
     <div class="video-placeholder" *ngIf="!camSrc()">
@@ -69,7 +70,13 @@
           </div>
         </div>
       </div>
-      <div class="telem-toggles">
+    </div>
+
+    <!-- Joystick -->
+    <div class="joystick-overlay">
+      <span class="label">DRIVE</span>
+      <app-joystick (move)="onJoystickMove($event)" (stop)="onJoystickStop()"></app-joystick>
+      <div class="joystick-toggles">
         <div
           class="telem-switch"
           [class.active]="sound.micStreamActive()"
@@ -79,18 +86,6 @@
           <span class="switch-label">MIC</span>
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>
-      </div>
-    </div>
-
-    <!-- Joystick -->
-    <div class="joystick-overlay">
-      <span class="label">DRIVE</span>
-      <app-joystick (move)="onJoystickMove($event)" (stop)="onJoystickStop()"></app-joystick>
-      <div class="joystick-toggles">
-        <div class="telem-switch" [class.active]="irOn()" (click)="toggleIr()" title="Toggle IR LED">
-          <span class="switch-label">IR</span>
-          <span class="switch-track"><span class="switch-thumb"></span></span>
-        </div>
         <div
           class="telem-switch"
           [class.active]="sound.voiceToRoverActive()"
@@ -98,6 +93,10 @@
           [attr.title]="voiceToggleTitle()"
           (click)="toggleVoiceToRover()">
           <span class="switch-label">VOICE</span>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </div>
+        <div class="telem-switch" [class.active]="irOn()" (click)="toggleIr()" title="Toggle IR LED">
+          <span class="switch-label">IR</span>
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>
         <div class="telem-switch" [class.active]="infoOverlayVisible()" (click)="infoOverlayVisible.set(!infoOverlayVisible())" title="Telemetry, system readouts, encoder & video settings">
@@ -204,4 +203,29 @@
       </div>
     </div>
   </div>
+  </ng-container>
+  <ng-template #operatorGateTpl>
+    <div class="operator-gate">
+      <div class="operator-gate-panel">
+        <h1 class="operator-gate-title">OPERATOR</h1>
+        <p *ngIf="operatorGateLoading()" class="operator-gate-hint">Checking…</p>
+        <form *ngIf="!operatorGateLoading()" class="operator-gate-form" (ngSubmit)="submitOperatorUnlock()">
+          <label class="operator-gate-label" for="op-pw">Password</label>
+          <input
+            id="op-pw"
+            class="operator-gate-input"
+            type="password"
+            name="unlockPw"
+            [(ngModel)]="unlockPassword"
+            autocomplete="current-password"
+            [disabled]="operatorUnlockSubmitting()"
+          />
+          <p *ngIf="operatorGateMessage()" class="operator-gate-err">{{ operatorGateMessage() }}</p>
+          <button type="submit" class="operator-gate-btn" [disabled]="operatorUnlockSubmitting()">
+            {{ operatorUnlockSubmitting() ? '…' : 'UNLOCK' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </ng-template>
 </div>

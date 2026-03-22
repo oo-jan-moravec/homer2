@@ -16,6 +16,8 @@ import { wifiRssiToLabelAndDb } from '../../utils/wifi';
   styleUrl: './operator-page.component.scss'
 })
 export class OperatorPageComponent implements OnInit, OnDestroy {
+  private static readonly operatorSessionKey = 'homer2-operator-unlocked';
+
   readonly batteryBarCount = [1, 2, 3, 4, 5] as const;
   readonly wifiBarCount = [1, 2, 3, 4] as const;
 
@@ -28,6 +30,12 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     typeof globalThis !== 'undefined' && 'location' in globalThis && globalThis.location
       ? globalThis.location.origin
       : '';
+
+  operatorUnlocked = signal(false);
+  operatorGateLoading = signal(true);
+  operatorGateMessage = signal('');
+  operatorUnlockSubmitting = signal(false);
+  unlockPassword = '';
 
   telemetry = this.signalr.telemetry;
   signalrConnected = this.signalr.connected;
@@ -68,6 +76,57 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit() {
+    this.api.getOperatorGate().subscribe({
+      next: gate => {
+        if (!gate.passwordRequired) {
+          this.operatorGateLoading.set(false);
+          this.applyOperatorUnlock();
+          return;
+        }
+        try {
+          if (sessionStorage.getItem(OperatorPageComponent.operatorSessionKey) === '1') {
+            this.operatorGateLoading.set(false);
+            this.applyOperatorUnlock();
+            return;
+          }
+        } catch {
+          /* private mode */
+        }
+        this.operatorGateLoading.set(false);
+      },
+      error: () => {
+        this.operatorGateLoading.set(false);
+        this.operatorGateMessage.set('Cannot reach rover API');
+      }
+    });
+  }
+
+  submitOperatorUnlock() {
+    this.operatorGateMessage.set('');
+    this.operatorUnlockSubmitting.set(true);
+    this.api.unlockOperator(this.unlockPassword).subscribe({
+      next: () => {
+        try {
+          sessionStorage.setItem(OperatorPageComponent.operatorSessionKey, '1');
+        } catch {
+          /* private mode: unlock for this tab session only */
+        }
+        this.operatorUnlockSubmitting.set(false);
+        this.applyOperatorUnlock();
+      },
+      error: () => {
+        this.operatorUnlockSubmitting.set(false);
+        this.operatorGateMessage.set('Wrong password');
+      }
+    });
+  }
+
+  private applyOperatorUnlock() {
+    this.operatorUnlocked.set(true);
+    this.startOperatorSession();
+  }
+
+  private startOperatorSession() {
     this.signalr.connect().catch(() => {});
     this.api.getStatus().subscribe({
       next: s => {

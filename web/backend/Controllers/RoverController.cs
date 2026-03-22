@@ -8,6 +8,7 @@ namespace RoverOperatorApi.Controllers;
 [Route("api/[controller]")]
 public class RoverController : ControllerBase
 {
+    private readonly IConfiguration _config;
     private readonly IRoverSerialService _serial;
     private readonly ILcdService _lcd;
     private readonly IIrService _ir;
@@ -20,6 +21,7 @@ public class RoverController : ControllerBase
     private readonly ILcdAutoUpdateService _lcdAutoUpdate;
 
     public RoverController(
+        IConfiguration config,
         IRoverSerialService serial,
         ILcdService lcd,
         IIrService ir,
@@ -31,6 +33,7 @@ public class RoverController : ControllerBase
         IWifiSurveyService wifiSurvey,
         ILcdAutoUpdateService lcdAutoUpdate)
     {
+        _config = config;
         _serial = serial;
         _lcd = lcd;
         _ir = ir;
@@ -59,6 +62,32 @@ public class RoverController : ControllerBase
     {
         var survey = await _wifiSurvey.GetSurveyAsync(ct);
         return Ok(survey);
+    }
+
+    /// <summary>
+    /// Operator UI gate: when <c>Rover:OperatorPassword</c> is non-empty, the drive page must unlock first.
+    /// Password is compared in plaintext (intentionally simple for LAN rover use).
+    /// </summary>
+    [HttpGet("operator/gate")]
+    public IActionResult GetOperatorGate()
+    {
+        var pwd = _config["Rover:OperatorPassword"];
+        var required = !string.IsNullOrWhiteSpace(pwd);
+        return Ok(new { passwordRequired = required });
+    }
+
+    [HttpPost("operator/unlock")]
+    public IActionResult PostOperatorUnlock([FromBody] OperatorUnlockRequest? req)
+    {
+        var expected = _config["Rover:OperatorPassword"];
+        if (string.IsNullOrWhiteSpace(expected))
+            return Ok(new { ok = true });
+
+        var given = req?.Password ?? "";
+        if (given == expected)
+            return Ok(new { ok = true });
+
+        return Unauthorized();
     }
 
     /// <summary>Overall status: serial connected, hardware availability.</summary>
@@ -225,3 +254,4 @@ public record LcdRequest(string? Line1, string? Line2);
 public record LcdAutoRequest(bool Enabled);
 public record IrRequest(bool On);
 public record CameraQualityRequest(string? Preset);
+public record OperatorUnlockRequest(string? Password);

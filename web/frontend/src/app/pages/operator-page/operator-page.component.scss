@@ -87,12 +87,6 @@ $border: #1f2937;
   flex-wrap: wrap;
 }
 
-.telem-toggles {
-  display: flex;
-  gap: 0.5rem;
-  margin-left: auto;
-}
-
 .telem-switch {
   display: flex;
   align-items: center;
@@ -334,11 +328,19 @@ $link-alarm: #ff3355;
 
   .joystick-toggles {
     display: flex;
-    flex-wrap: wrap;
+    flex-flow: row nowrap;
     justify-content: center;
-    gap: 0.5rem;
-    max-width: min(100vw - 3rem, 14rem);
+    align-items: center;
+    gap: 0.35rem;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
     pointer-events: auto;
+
+    .telem-switch { flex-shrink: 0; }
   }
 }
 
@@ -657,5 +659,106 @@ $link-alarm: #ff3355;
       border-color: $fg;
       background: rgba(0, 40, 15, 0.5);
     }
+  }
+}
+
+// ── Password gate (drive page) ───────────────────────────────────────────────
+
+.operator-gate {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: $bg;
+  z-index: 100;
+}
+
+.operator-gate-panel {
+  width: 100%;
+  max-width: 20rem;
+  padding: 1.5rem 1.35rem;
+  background: $bg-panel;
+  border: 1px solid $fg;
+  box-shadow: 0 0 20px color.adjust($fg, $alpha: -0.75);
+}
+
+.operator-gate-title {
+  margin: 0 0 1rem;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  color: $fg;
+  text-align: center;
+}
+
+.operator-gate-hint {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  color: $fg-dim;
+  letter-spacing: 0.08em;
+}
+
+.operator-gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.operator-gate-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: $fg-dim;
+}
+
+.operator-gate-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.65rem;
+  font-family: inherit;
+  font-size: 12px;
+  color: $fg;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid $border;
+  border-radius: 2px;
+
+  &:focus {
+    outline: none;
+    border-color: $fg;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+  }
+}
+
+.operator-gate-err {
+  margin: 0;
+  font-size: 10px;
+  color: #ff6b6b;
+  letter-spacing: 0.04em;
+}
+
+.operator-gate-btn {
+  margin-top: 0.25rem;
+  padding: 0.55rem 1rem;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: $bg;
+  background: $fg;
+  border: 1px solid $fg;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }

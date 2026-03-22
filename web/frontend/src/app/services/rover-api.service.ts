@@ -74,6 +74,14 @@ export class RoverApiService {
   private http = inject(HttpClient);
   private base = '/api/rover';
 
+  getOperatorGate(): Observable<{ passwordRequired: boolean }> {
+    return this.http.get<{ passwordRequired: boolean }>(`${this.base}/operator/gate`);
+  }
+
+  unlockOperator(password: string): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(`${this.base}/operator/unlock`, { password });
+  }
+
   getStatus(): Observable<RoverStatus> {
     return this.http.get<RoverStatus>(`${this.base}/status`);
   }

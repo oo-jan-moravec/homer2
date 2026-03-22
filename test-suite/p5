@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo pinging brain5
+
+ping rpi-rover-brain5.local
+
+

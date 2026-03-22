@@ -2,6 +2,7 @@ import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RoverApiService, RoverStatus, SystemInfo, TelemetryData } from '../../services/rover-api.service';
+import { RoverCameraStreamService } from '../../services/rover-camera-stream.service';
 import { RoverSignalRService } from '../../services/rover-signalr.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
 import { batteryVoltageToPercent } from '../../utils/battery';
@@ -17,6 +18,7 @@ import { wifiRssiToLabelAndDb } from '../../utils/wifi';
 export class ConsolePageComponent implements OnInit, OnDestroy {
   private api = inject(RoverApiService);
   private signalr = inject(RoverSignalRService);
+  readonly cameraFeed = inject(RoverCameraStreamService);
 
   status = signal<RoverStatus | null>(null);
   systemInfo = signal<SystemInfo | null>(null);
@@ -33,7 +35,6 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   driveVel = 0;
   message = signal<string>('');
   videoQualityPreset = '480p';
-  camSrc = signal<string | null>(null);
 
   ngOnInit() {
     this.api.getStatus().subscribe({
@@ -50,11 +51,11 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
       error: () => {}
     });
     this.signalr.connect().catch(() => this.message.set('SignalR failed'));
-    this.camSrc.set(this.api.getCameraStreamUrl());
+    void this.cameraFeed.start();
   }
 
   ngOnDestroy() {
-    this.camSrc.set(null);
+    void this.cameraFeed.stop();
     this.signalr.stopDrive();
   }
 
@@ -130,11 +131,11 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   }
 
   onStreamError() {
-    this.camSrc.set(null);
+    void this.cameraFeed.stop();
   }
 
   retryStream() {
-    this.camSrc.set(this.api.getCameraStreamUrl());
+    void this.cameraFeed.start();
   }
 
   bearingLabel(b: number): string {

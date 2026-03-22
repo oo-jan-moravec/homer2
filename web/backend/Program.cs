@@ -41,6 +41,7 @@ app.MapControllers();
 app.MapHub<TelemetryHub>("/hubs/telemetry");
 app.MapHub<DriveHub>("/hubs/drive");
 app.MapHub<SoundHub>("/hubs/sound");
+app.MapHub<CameraHub>("/hubs/camera");
 app.MapFallbackToFile("index.html");
 
 app.Run();

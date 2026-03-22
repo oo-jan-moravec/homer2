@@ -2,6 +2,7 @@ import { Component, effect, inject, OnInit, OnDestroy, signal } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RoverApiService, RoverStatus, SystemInfo, TelemetryData, SerialDebugSnapshot, WifiSurvey, WifiApEntry } from '../../services/rover-api.service';
+import { RoverCameraStreamService } from '../../services/rover-camera-stream.service';
 import { RoverSignalRService } from '../../services/rover-signalr.service';
 import { SoundService } from '../../services/sound.service';
 import { JoystickComponent } from '../../components/joystick/joystick.component';
@@ -23,6 +24,7 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
 
   private api = inject(RoverApiService);
   readonly signalr = inject(RoverSignalRService);
+  readonly cameraFeed = inject(RoverCameraStreamService);
   sound = inject(SoundService);
 
   /** Shown in SR LED tooltips (ws://…/hubs/…). */
@@ -39,7 +41,6 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
 
   telemetry = this.signalr.telemetry;
   signalrConnected = this.signalr.connected;
-  camSrc = signal<string | null>(null);
   irOn = signal<boolean | null>(null);
   soundAvailable = signal(false);
   systemInfo = signal<SystemInfo | null>(null);
@@ -135,7 +136,7 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
         this.soundAvailable.set(s.soundAvailable ?? false);
       }
     });
-    this.camSrc.set(this.api.getCameraStreamUrl());
+    void this.cameraFeed.start();
     this.refreshSystemInfo();
     this.systemInfoInterval = setInterval(() => this.refreshSystemInfo(), 30_000);
     this.api.getLcdAutoEnabled().subscribe({ next: r => this.lcdAutoEnabled = r.enabled, error: () => {} });
@@ -152,7 +153,7 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     if (this.systemInfoInterval) clearInterval(this.systemInfoInterval);
     if (this.debugInterval) clearInterval(this.debugInterval);
     if (this.wifiSurveyInterval) clearInterval(this.wifiSurveyInterval);
-    this.camSrc.set(null);
+    void this.cameraFeed.stop();
     this.signalr.stopDrive();
     this.sound.stopMicStream();
     this.sound.stopVoiceToRover();
@@ -227,11 +228,11 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   }
 
   onStreamError() {
-    this.camSrc.set(null);
+    void this.cameraFeed.stop();
   }
 
   retryStream() {
-    this.camSrc.set(this.api.getCameraStreamUrl());
+    void this.cameraFeed.start();
   }
 
   toggleIr() {
@@ -339,9 +340,9 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     return (mm / 10).toFixed(1);
   }
 
-  /** Flash OBST chip red when obstacle closer than 100 mm. */
+  /** Blink OBST chip when obstacle closer than 200 mm (20 cm). */
   obstCloseAlarm(t: TelemetryData | null | undefined): boolean {
     const mm = t?.ultrasonicMm;
-    return mm != null && mm < 100;
+    return mm != null && mm < 200;
   }
 }

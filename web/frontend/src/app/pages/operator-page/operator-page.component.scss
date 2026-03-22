@@ -194,23 +194,78 @@ $border: #1f2937;
 
 $link-alarm: #ff3355;
 
+$obst-alarm-cycle: 0.85s;
+
 .telem-chip-obst {
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 
   &.telem-chip-obst--alarm {
-    border-color: $link-alarm;
-    box-shadow: 0 0 10px color.adjust($link-alarm, $alpha: -0.55);
-    animation: link-chip-alarm-pulse 0.7s ease-in-out infinite;
-    background: color.adjust($link-alarm, $alpha: -0.88);
+    transition: none;
+    animation: telem-chip-obst-alarm-bg $obst-alarm-cycle linear infinite;
+
+    .label {
+      animation: telem-chip-obst-alarm-label $obst-alarm-cycle linear infinite;
+    }
 
     .value {
-      color: $link-alarm;
+      animation: telem-chip-obst-alarm-value $obst-alarm-cycle linear infinite;
     }
 
-    .label,
     .unit {
-      color: color.adjust($link-alarm, $lightness: 8%);
+      animation: telem-chip-obst-alarm-unit $obst-alarm-cycle linear infinite;
     }
+  }
+}
+
+@keyframes telem-chip-obst-alarm-bg {
+  0%,
+  50% {
+    background: $bg-panel;
+    border-color: $border;
+    box-shadow: none;
+  }
+
+  50.01%,
+  100% {
+    background: $link-alarm;
+    border-color: color.adjust($link-alarm, $lightness: 18%);
+    box-shadow: none;
+  }
+}
+
+@keyframes telem-chip-obst-alarm-label {
+  0%,
+  50% {
+    color: $fg-dim;
+  }
+
+  50.01%,
+  100% {
+    color: #fff;
+  }
+}
+
+@keyframes telem-chip-obst-alarm-value {
+  0%,
+  50% {
+    color: $fg;
+  }
+
+  50.01%,
+  100% {
+    color: #fff;
+  }
+}
+
+@keyframes telem-chip-obst-alarm-unit {
+  0%,
+  50% {
+    color: $fg-dim;
+  }
+
+  50.01%,
+  100% {
+    color: #fff;
   }
 }
 

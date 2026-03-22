@@ -219,8 +219,9 @@ public class RoverController : ControllerBase
         }
 
         Response.ContentType = "multipart/x-mixed-replace; boundary=frame";
-        Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+        Response.Headers.CacheControl = "no-store, no-cache, must-revalidate, no-transform";
         Response.Headers.Pragma = "no-cache";
+        Response.Headers.Append("X-Accel-Buffering", "no");
 
         var body = Response.Body;
         await foreach (var frame in _cameraStream.StreamFramesAsync(ct))

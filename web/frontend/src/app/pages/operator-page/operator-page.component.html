@@ -2,13 +2,13 @@
   <ng-container *ngIf="operatorUnlocked(); else operatorGateTpl">
     <div class="video-viewport">
       <img
-        *ngIf="camSrc()"
-        [src]="camSrc()"
+        *ngIf="cameraFeed.previewUrl()"
+        [src]="cameraFeed.previewUrl()!"
         alt="Rover camera"
         class="video-feed"
         (error)="onStreamError()"
       />
-      <div class="video-placeholder" *ngIf="!camSrc()">
+      <div class="video-placeholder" *ngIf="!cameraFeed.previewUrl()">
         <span>VIDEO FEED</span>
         <button type="button" (click)="retryStream()">START STREAM</button>
       </div>

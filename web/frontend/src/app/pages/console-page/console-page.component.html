@@ -11,13 +11,13 @@
       <h3>CAMERA</h3>
       <div class="tile-frame">
         <img
-          *ngIf="camSrc()"
-          [src]="camSrc()!"
+          *ngIf="cameraFeed.previewUrl()"
+          [src]="cameraFeed.previewUrl()!"
           alt="Rover camera"
           class="tile-stream"
           (error)="onStreamError()"
         />
-        <div class="tile-placeholder" *ngIf="!camSrc()">
+        <div class="tile-placeholder" *ngIf="!cameraFeed.previewUrl()">
           <span>NO STREAM</span>
           <button type="button" (click)="retryStream()">RETRY</button>
         </div>

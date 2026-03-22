@@ -1,10 +1,11 @@
 $fg: #00ff41;
 $border: #1f2937;
 
+// --joystick-size set by parent (e.g. operator mobile); default matches desktop.
 .joystick {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: var(--joystick-size, 200px);
+  height: var(--joystick-size, 200px);
   touch-action: none;
   cursor: pointer;
 
@@ -22,9 +23,9 @@ $border: #1f2937;
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 60px;
-    height: 60px;
-    margin: -30px 0 0 -30px;
+    width: calc(var(--joystick-size, 200px) * 0.3);
+    height: calc(var(--joystick-size, 200px) * 0.3);
+    margin: calc(var(--joystick-size, 200px) * -0.15) 0 0 calc(var(--joystick-size, 200px) * -0.15);
     border-radius: 50%;
     background: rgba($fg, 0.9);
     border: 2px solid $fg;

@@ -197,7 +197,14 @@ $link-alarm: #ff3355;
 $obst-alarm-cycle: 0.85s;
 
 .telem-chip-obst {
+  flex-shrink: 0;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+
+  /* Reserve width for longest reading (e.g. 999.9 cm) so HUD chips to the right do not shift. */
+  .value {
+    flex: 0 0 auto;
+    min-width: 6ch;
+  }
 
   &.telem-chip-obst--alarm {
     transition: none;
@@ -835,5 +842,259 @@ $obst-alarm-cycle: 0.85s;
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+}
+
+// ═══ Mobile / compact viewports (desktop layout above is unchanged) ═══════════
+// Targets phones in portrait and landscape; avoids page scroll and horizontal bleed.
+
+@media (max-width: 768px), (max-height: 520px) and (max-width: 926px) {
+  .operator {
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .video-viewport {
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+
+    .video-feed {
+      min-width: 0;
+      min-height: 0;
+      max-width: 100%;
+      max-height: 100%;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .video-placeholder {
+      padding: 0 0.75rem;
+      text-align: center;
+      font-size: 10px;
+
+      button {
+        padding: 0.45rem 0.75rem;
+        font-size: 10px;
+      }
+    }
+  }
+
+  .telem-overlay {
+    top: max(0.35rem, env(safe-area-inset-top, 0px));
+    left: max(0.35rem, env(safe-area-inset-left, 0px));
+    right: max(0.35rem, env(safe-area-inset-right, 0px));
+    gap: 0.22rem;
+  }
+
+  .telem-chips {
+    gap: 0.2rem;
+    max-width: 100%;
+  }
+
+  .telem-chip {
+    padding: 0.18rem 0.28rem;
+    font-size: 9px;
+    gap: 0.16rem;
+
+    .label {
+      letter-spacing: 0.04em;
+    }
+
+    .value {
+      min-width: 3ch;
+    }
+
+    .unit {
+      font-size: 7.5px;
+    }
+  }
+
+  .telem-chip-obst .value {
+    min-width: 5ch;
+  }
+
+  .telem-chip-link .link-led {
+    width: 7px;
+    height: 7px;
+  }
+
+  .telem-bars .bars {
+    gap: 1px;
+
+    .bar {
+      width: 3px;
+    }
+  }
+
+  .telem-wifi .bars .bar {
+    &:nth-child(1) { height: 0.28rem; }
+    &:nth-child(2) { height: 0.4rem; }
+    &:nth-child(3) { height: 0.52rem; }
+    &:nth-child(4) { height: 0.68rem; }
+  }
+
+  .telem-battery .bars .bar {
+    height: 0.6rem;
+  }
+
+  .joystick-overlay {
+    bottom: max(0.35rem, env(safe-area-inset-bottom, 0px));
+    right: max(0.35rem, env(safe-area-inset-right, 0px));
+    gap: 0.35rem;
+    max-width: calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 0.5rem);
+
+    .label {
+      font-size: 8px;
+      letter-spacing: 0.1em;
+    }
+
+    .joystick-toggles {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: 100%;
+      overflow-x: visible;
+      overflow-y: visible;
+      gap: 0.22rem;
+    }
+
+    .telem-switch {
+      padding: 0.24rem 0.36rem;
+      font-size: 8px;
+
+      .switch-track {
+        width: 1.9rem;
+        height: 0.88rem;
+
+        .switch-thumb {
+          width: 0.55rem;
+          height: 0.55rem;
+        }
+      }
+
+      &.active .switch-track .switch-thumb {
+        transform: translateX(calc(1.9rem - 0.55rem - 4px));
+      }
+    }
+  }
+
+  .info-panels.visible {
+    pointer-events: auto;
+  }
+
+  .console-column {
+    top: max(4.75rem, calc(env(safe-area-inset-top, 0px) + 3.5rem));
+    left: max(0.35rem, env(safe-area-inset-left, 0px));
+    right: max(0.35rem, env(safe-area-inset-right, 0px));
+    width: auto;
+    max-width: none;
+    max-height: calc(
+      100dvh - 5.25rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+    );
+    gap: 0.35rem;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .info-panel {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    padding: 0.45rem 0.55rem;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .ik {
+    min-width: 3.25rem;
+    font-size: 9.5px;
+  }
+
+  .ititle {
+    font-size: 9px;
+    margin-bottom: 0.35rem;
+  }
+
+  .ilabel {
+    font-size: 10px;
+    margin-bottom: 0.28rem;
+  }
+
+  .wifi-survey-panel {
+    .wifi-survey-meta {
+      min-height: 0;
+      font-size: 8.5px;
+    }
+
+    .wifi-survey-body {
+      min-height: 5rem;
+      max-height: min(9rem, 24dvh);
+    }
+
+    .wifi-ap-row {
+      padding: 0.2rem 0.3rem;
+      font-size: 9px;
+    }
+  }
+
+  .debug-panel .debug-trace {
+    max-height: min(7.5rem, 20dvh);
+  }
+
+  .operator-gate {
+    padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
+      max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
+  }
+
+  .operator-gate-panel {
+    max-width: 100%;
+  }
+
+  // Portrait: scale joystick from the shorter screen edge; stack drive controls.
+  @media (orientation: portrait) {
+    .joystick-overlay {
+      align-items: flex-end;
+      --joystick-size: min(42vmin, min(72vw, 56dvh), 200px);
+    }
+  }
+
+  // Landscape: short vertical space — row layout, smaller stick, toggles stacked.
+  @media (orientation: landscape) {
+    .telem-overlay {
+      top: max(0.25rem, env(safe-area-inset-top, 0px));
+    }
+
+    .console-column {
+      top: max(3.25rem, calc(env(safe-area-inset-top, 0px) + 2rem));
+      max-height: calc(
+        100dvh - 3.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+      );
+    }
+
+    .joystick-overlay {
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 0.4rem;
+      --joystick-size: min(32vh, min(28vw, 42dvh), 200px);
+
+      .label {
+        align-self: center;
+        margin-right: 0.1rem;
+      }
+
+      .joystick-toggles {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        width: auto;
+        max-width: 5.5rem;
+      }
+    }
   }
 }

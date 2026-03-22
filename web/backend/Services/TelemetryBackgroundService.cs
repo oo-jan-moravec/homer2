@@ -4,7 +4,7 @@ using RoverOperatorApi.Hubs;
 namespace RoverOperatorApi.Services;
 
 /// <summary>
-/// Consumes newline-terminated lines from the rover serial port (e.g. v9 push every 5s).
+/// Consumes newline-terminated lines from the rover serial port (e.g. firmware auto-push ~200 ms).
 /// Parses CSV telemetry, augments with host metrics, updates the store, and broadcasts via SignalR.
 /// </summary>
 public sealed class TelemetryBackgroundService : BackgroundService

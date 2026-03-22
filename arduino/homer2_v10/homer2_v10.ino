@@ -8,6 +8,8 @@
 //   - Serial parser hardened     (empty lines, null bytes, overflow)
 //   - Encoder-correction state   (properly reset on bearing change)
 //   - Watchdog-fire diagnostic   (#WDSTOP printed once so host can see it)
+// v10.1: HC-SR04 on D2=TRIG, D3=ECHO; non-blocking range; CSV field us_mm;
+//   auto-telemetry interval 200 ms (was 5 s)
 //
 // ========== PROTOCOL (115200 8N1, newline-terminated) ==========
 //
@@ -39,17 +41,17 @@
 // +----------+------------------+------------------------------------------------+
 // | Startup  | #HOMER <ver> READY | Ready, <ver>=firmware version                  |
 // | Reset    | #R               | Encoders zeroed                                 |
-// | T cmd    | le,re,dist_mm,vL,vR,vBat | Telemetry line (see below)              |
-// | Every 5s | le,re,dist_mm,vL,vR,vBat | Unsolicited telemetry; no wdog refresh  |
+// | T cmd    | le,re,dist_mm,vL,vR,vBat,us_mm | Telemetry (us_mm=ultrasonic mm, -1=invalid) |
+// | Auto     | same CSV every 200 ms    | Unsolicited telemetry; no wdog refresh       |
 // | ENC cmd  | #ENC en kp max   | Encoder config echo                             |
 // | WD stop  | #WDSTOP          | Watchdog fired, motors stopped (one-shot)       |
 // | Parse err| ERR parse        | Invalid command                                 |
 // | Timer fix| #WARN timer-fix  | Timer register corruption detected + repaired   |
 // +----------+------------------+------------------------------------------------+
 //
-// TELEMETRY (rover -> host, on T command or auto every 5 s):
-// le,re=cumul edges; dist_mm=avg distance (mm), reset on R; v=mm/s;
-// vBat=pack V (11S NiMH via divider)
+// TELEMETRY (rover -> host, on T command or auto every 200 ms):
+// le,re=cumul edges; dist_mm=encoder odometer (mm), reset on R; v=mm/s;
+// vBat=pack V (11S NiMH via divider); us_mm=HC-SR04 range (mm), -1=no echo/out of range
 //
 // WATCHDOG: 500 ms without command -> motors stop
 //
@@ -62,12 +64,12 @@
 #include <string.h>
 
 // ================ VERSION 10 =================
-const char VERSION[] = "10.0";
+const char VERSION[] = "10.1";
 
 // #define DEBUG_DRIVE 1
 
 // ===== Timing constants =====
-const unsigned long AUTO_TELEM_MS  = 5000;
+const unsigned long AUTO_TELEM_MS  = 200;
 const unsigned long CMD_TIMEOUT_MS = 500;
 
 // ===== Battery voltage (A0) — 11-cell NiMH pack =====
@@ -98,6 +100,21 @@ const uint8_t BIN2 = 13;
 
 // Set to an actual pin number if STBY is wired to the Arduino; -1 = not used
 const int8_t STBY_PIN = -1;
+
+// ===== HC-SR04 ultrasonic (front obstacle range) =====
+const uint8_t US_TRIG_PIN = 2;   // D2
+const uint8_t US_ECHO_PIN = 3;   // D3
+const unsigned long US_SAMPLE_INTERVAL_MS = 200;
+// Echo timeout ~4 m round-trip; mm ≈ pulse_us * 10 / 58
+const unsigned long US_ECHO_TIMEOUT_US = 24000;
+const unsigned long US_PULSE_MIN_US    = 120;   // below ~2 cm, unreliable
+
+enum UsPhase { US_IDLE, US_WAIT_HIGH, US_WAIT_LOW };
+static UsPhase       usState          = US_IDLE;
+static unsigned long usPhaseStartUs   = 0;
+static unsigned long usPulseRiseUs    = 0;
+static unsigned long usLastCompleteMs = 0;
+static int           usCachedMm       = -1;
 
 // ===== Encoders (PCINT pins) =====
 const uint8_t ENC_LEFT  = 9;   // D9  (PB1, PCINT0 group)
@@ -185,6 +202,58 @@ static void updateBatteryAdc() {
         cachedBatteryV = vOut * (R1 + R2) / R2 * BATTERY_VOLTAGE_CALIB;
         adcSum   = 0;
         adcCount = 0;
+    }
+}
+
+// ----- HC-SR04 (non-blocking: one state transition per loop) -----
+static void updateUltrasonic() {
+    unsigned long nowMs = millis();
+
+    switch (usState) {
+        case US_IDLE:
+            if (usLastCompleteMs != 0 &&
+                (nowMs - usLastCompleteMs) < US_SAMPLE_INTERVAL_MS)
+                return;
+            digitalWrite(US_TRIG_PIN, LOW);
+            delayMicroseconds(2);
+            digitalWrite(US_TRIG_PIN, HIGH);
+            delayMicroseconds(10);
+            digitalWrite(US_TRIG_PIN, LOW);
+            usPhaseStartUs = micros();
+            usState         = US_WAIT_HIGH;
+            break;
+
+        case US_WAIT_HIGH:
+            if (digitalRead(US_ECHO_PIN) == HIGH) {
+                usPulseRiseUs = micros();
+                usState       = US_WAIT_LOW;
+            } else if (micros() - usPhaseStartUs > US_ECHO_TIMEOUT_US) {
+                usCachedMm       = -1;
+                usLastCompleteMs = nowMs;
+                usState          = US_IDLE;
+            }
+            break;
+
+        case US_WAIT_LOW:
+            if (digitalRead(US_ECHO_PIN) == LOW) {
+                unsigned long dur = micros() - usPulseRiseUs;
+                if (dur < US_PULSE_MIN_US || dur > US_ECHO_TIMEOUT_US)
+                    usCachedMm = -1;
+                else {
+                    long mm = (long)(dur * 10UL) / 58UL;
+                    if (mm > 5000L)
+                        usCachedMm = -1;
+                    else
+                        usCachedMm = (int)mm;
+                }
+                usLastCompleteMs = nowMs;
+                usState          = US_IDLE;
+            } else if (micros() - usPulseRiseUs > US_ECHO_TIMEOUT_US) {
+                usCachedMm       = -1;
+                usLastCompleteMs = nowMs;
+                usState          = US_IDLE;
+            }
+            break;
     }
 }
 
@@ -385,7 +454,9 @@ static void emitTelemetry(bool touchWatchdog) {
     Serial.print(dist_mm);       Serial.print(',');
     Serial.print(clamp_i16(vL_mmps)); Serial.print(',');
     Serial.print(clamp_i16(vR_mmps)); Serial.print(',');
-    Serial.println(cachedBatteryV, 2);
+    Serial.print(cachedBatteryV, 2);
+    Serial.print(',');
+    Serial.println(usCachedMm);
 }
 
 // =====================================================================
@@ -406,6 +477,10 @@ void setup() {
         pinMode(STBY_PIN, OUTPUT);
         digitalWrite(STBY_PIN, HIGH);
     }
+
+    pinMode(US_TRIG_PIN, OUTPUT);
+    digitalWrite(US_TRIG_PIN, LOW);
+    pinMode(US_ECHO_PIN, INPUT);
 
     // Encoder pins
     pinMode(ENC_LEFT,  INPUT_PULLUP);
@@ -445,6 +520,9 @@ void loop() {
 
     // ---- 1. Non-blocking battery ADC ----
     updateBatteryAdc();
+
+    // ---- 1b. HC-SR04 range (state machine) ----
+    updateUltrasonic();
 
     // ---- 2. Command parsing ----
     char line[64];

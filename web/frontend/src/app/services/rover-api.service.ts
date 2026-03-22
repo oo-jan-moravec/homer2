@@ -34,6 +34,8 @@ export interface TelemetryData {
   velocityLeftMmps: number;
   velocityRightMmps: number;
   batteryVoltage: number;
+  /** HC-SR04 obstacle range (mm); null if no reading. */
+  ultrasonicMm?: number | null;
   wifiRssiDb?: number | null;
   pingMs?: number | null;
 }

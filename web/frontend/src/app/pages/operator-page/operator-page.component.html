@@ -33,6 +33,11 @@
           <span class="value">{{ (telemetry()?.distanceMm ?? 0) / 1000 }}</span>
           <span class="unit">m</span>
         </div>
+        <div class="telem-chip">
+          <span class="label">US</span>
+          <span class="value">{{ telemetry()?.ultrasonicMm != null ? telemetry()!.ultrasonicMm : '--' }}</span>
+          <span class="unit">mm</span>
+        </div>
         <div class="telem-chip telem-bars telem-wifi">
           <span class="label">WIFI</span>
           <span class="bars" [class.unknown]="wifiBars(telemetry()) < 0"
@@ -129,6 +134,7 @@
         <div class="isep"></div>
         <div class="irow"><span class="ik">vL</span><span class="iv">{{ telemetry()?.velocityLeftMmps ?? '--' }} <span class="iu">mm/s</span></span></div>
         <div class="irow"><span class="ik">vR</span><span class="iv">{{ telemetry()?.velocityRightMmps ?? '--' }} <span class="iu">mm/s</span></span></div>
+        <div class="irow"><span class="ik">us</span><span class="iv">{{ telemetry()?.ultrasonicMm ?? '--' }} <span class="iu">mm</span></span></div>
         <div class="isep"></div>
         <div class="irow"><span class="ik">bat</span><span class="iv">{{ (telemetry()?.batteryVoltage | number:'1.2-2') ?? '--' }} <span class="iu">V</span> ({{ batteryPercent(telemetry()) ?? '--' }}%)</span></div>
         <div class="irow"><span class="ik">wifi</span><span class="iv">{{ telemetry()?.wifiRssiDb ?? '--' }} <span class="iu">dBm</span></span></div>

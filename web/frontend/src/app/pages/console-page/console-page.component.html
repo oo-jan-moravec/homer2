@@ -59,7 +59,8 @@ disk:  {{ systemInfo()!.diskFreeGb ?? '--' }}/{{ systemInfo()!.diskTotalGb ?? '-
       <h3>TELEMETRY (LIVE)</h3>
       <pre *ngIf="telemetry()">LE:  {{ telemetry()!.leftEdges }}
 RE:  {{ telemetry()!.rightEdges }}
-dist: {{ telemetry()!.distanceMm }} mm
+dist: {{ telemetry()!.distanceMm }} mm (enc)
+us:  {{ telemetry()!.ultrasonicMm != null ? telemetry()!.ultrasonicMm + ' mm' : '--' }}
 vL:  {{ telemetry()!.velocityLeftMmps }} mm/s
 vR:  {{ telemetry()!.velocityRightMmps }} mm/s
 bat: {{ telemetry()!.batteryVoltage | number:'1.2-2' }} V ({{ batteryPercent(telemetry()) }}%)

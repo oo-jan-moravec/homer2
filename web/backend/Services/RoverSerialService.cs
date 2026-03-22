@@ -8,7 +8,7 @@ namespace RoverOperatorApi.Services;
 /// <summary>
 /// Owns the serial connection to the rover Arduino. Thread-safe.
 /// Protocol: 115200 8N1, newline-terminated. T=telemetry, R=reset encoders,
-/// "bearing vel"=drive. Watchdog 500ms. Telemetry: ingest unprompted CSV lines (v9) via TryReadTelemetryLine.
+/// "bearing vel"=drive. Watchdog 500ms. Telemetry: ingest unprompted CSV (le,re,dist,vL,vR,vBat[,us_mm]) via TryReadTelemetryLine.
 /// </summary>
 public interface IRoverSerialService
 {
@@ -227,7 +227,10 @@ public sealed class RoverSerialService : IRoverSerialService, IDisposable
             !int.TryParse(parts[4], out var vR) ||
             !double.TryParse(parts[5], NumberStyles.Float, CultureInfo.InvariantCulture, out var vBat))
             return null;
-        return new TelemetryData(le, re, dist, vL, vR, vBat, null);
+        int? ultra = null;
+        if (parts.Length >= 7 && int.TryParse(parts[6].Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var uMm))
+            ultra = uMm >= 0 ? uMm : null;
+        return new TelemetryData(le, re, dist, vL, vR, vBat, ultra);
     }
 
     public void Dispose() => Dispose(true);

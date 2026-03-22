@@ -8,6 +8,7 @@ export interface TelemetryData {
   velocityLeftMmps: number;
   velocityRightMmps: number;
   batteryVoltage: number;
+  ultrasonicMm?: number | null;
   wifiRssiDb?: number | null;
   pingMs?: number | null;
 }

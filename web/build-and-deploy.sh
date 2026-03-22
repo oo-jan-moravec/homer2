@@ -22,7 +22,7 @@ BUILD_ONLY=false
 
 [[ "${1:-}" == "--build" ]] && BUILD_ONLY=true
 
-HOST="${RPI_HOST:-rpi-rover-brain5.local}"
+HOST="${RPI_HOST:-rpi-rover-brain6.local}"
 RPI_USER="${RPI_USER:-hanzzo}"
 
 echo "=== 1. Building Angular frontend ==="

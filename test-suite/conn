@@ -2,6 +2,6 @@
 
 echo CONNECTING
 
-ssh hanzzo@rpi-rover-brain5.local
+ssh hanzzo@rpi-rover-brain6.local
 
 

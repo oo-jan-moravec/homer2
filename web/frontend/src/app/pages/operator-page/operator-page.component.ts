@@ -331,4 +331,17 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   }
   memoryPercent(): number | null { return this.systemInfo()?.memoryUsedPercent ?? null; }
   wifiDisplay(t: TelemetryData | null): string { return wifiRssiToLabelAndDb(t?.wifiRssiDb); }
+
+  /** HC-SR04 reading for HUD (cm, one decimal). */
+  obstCmDisplay(t: TelemetryData | null | undefined): string {
+    const mm = t?.ultrasonicMm;
+    if (mm == null) return '--';
+    return (mm / 10).toFixed(1);
+  }
+
+  /** Flash OBST chip red when obstacle closer than 100 mm. */
+  obstCloseAlarm(t: TelemetryData | null | undefined): boolean {
+    const mm = t?.ultrasonicMm;
+    return mm != null && mm < 100;
+  }
 }

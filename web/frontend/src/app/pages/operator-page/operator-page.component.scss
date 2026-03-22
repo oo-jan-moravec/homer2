@@ -194,6 +194,26 @@ $border: #1f2937;
 
 $link-alarm: #ff3355;
 
+.telem-chip-obst {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+
+  &.telem-chip-obst--alarm {
+    border-color: $link-alarm;
+    box-shadow: 0 0 10px color.adjust($link-alarm, $alpha: -0.55);
+    animation: link-chip-alarm-pulse 0.7s ease-in-out infinite;
+    background: color.adjust($link-alarm, $alpha: -0.88);
+
+    .value {
+      color: $link-alarm;
+    }
+
+    .label,
+    .unit {
+      color: color.adjust($link-alarm, $lightness: 8%);
+    }
+  }
+}
+
 .telem-chip-link {
   min-width: 0;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;

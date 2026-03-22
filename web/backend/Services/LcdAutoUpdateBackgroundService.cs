@@ -9,7 +9,7 @@ public sealed class LcdAutoUpdateBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<LcdAutoUpdateBackgroundService> _logger;
-    private const int UpdateIntervalMs = 2000;
+    private const int UpdateIntervalMs = 10_000;
 
     public LcdAutoUpdateBackgroundService(IServiceProvider services, ILogger<LcdAutoUpdateBackgroundService> logger)
     {

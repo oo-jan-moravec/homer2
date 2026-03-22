@@ -179,12 +179,26 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     this.api.toggleIr().subscribe({ next: r => this.applyIrState(r.on) });
   }
 
+  micToggleTitle(): string {
+    return this.soundAvailable()
+      ? 'Hear rover mic'
+      : 'Sound unavailable on this rover (Linux + ALSA USB capture required).';
+  }
+
+  voiceToggleTitle(): string {
+    return this.soundAvailable()
+      ? 'Speak to rover'
+      : 'Sound unavailable on this rover (Linux + ALSA USB playback required).';
+  }
+
   toggleMicStream() {
+    if (!this.soundAvailable()) return;
     if (this.sound.micStreamActive()) this.sound.stopMicStream();
     else this.sound.startMicStream();
   }
 
   toggleVoiceToRover() {
+    if (!this.soundAvailable()) return;
     if (this.sound.voiceToRoverActive()) this.sound.stopVoiceToRover();
     else this.sound.startVoiceToRover().catch(err => console.error('[Operator] Voice start failed:', err));
   }

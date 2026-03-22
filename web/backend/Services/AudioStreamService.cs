@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.SignalR;
 using RoverOperatorApi.Hubs;
 
@@ -51,15 +52,26 @@ public sealed class AudioStreamService : IAudioStreamService, IDisposable
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return (null, null);
 
-        // USB PnP Audio Device is card 1 (verified on rover RPi: aplay -l / arecord -l)
-        const string dev = "plughw:1,0";
+        var record = AlsaListPreferredDevice("arecord");
+        var playback = AlsaListPreferredDevice("aplay");
+        if (record == null || playback == null)
+            return (null, null);
+
+        return (record, playback);
+    }
+
+    /// <summary>
+    /// Parses <c>arecord -l</c> / <c>aplay -l</c> output. Prefers a line mentioning USB; otherwise first card/device pair.
+    /// </summary>
+    private static string? AlsaListPreferredDevice(string command)
+    {
         try
         {
             using var p = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "arecord",
+                    FileName = command,
                     Arguments = "-l",
                     UseShellExecute = false,
                     RedirectStandardOutput = true
@@ -67,13 +79,48 @@ public sealed class AudioStreamService : IAudioStreamService, IDisposable
             };
             p.Start();
             var outStr = p.StandardOutput.ReadToEnd();
-            p.WaitForExit(1000);
-            if (p.ExitCode == 0 && outStr.Contains("card 1"))
-                return (dev, dev);
-        }
-        catch { }
+            p.WaitForExit(2000);
+            if (p.ExitCode != 0 || string.IsNullOrWhiteSpace(outStr))
+                return null;
 
-        return (null, null);
+            return ParsePreferredPlughw(outStr);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static readonly Regex AlsaCardDeviceLine = new(
+        @"card\s+(\d+):\s*[^\n]*,\s*device\s+(\d+):",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private static string? ParsePreferredPlughw(string listOutput)
+    {
+        int? firstCard = null, firstDev = null;
+        int? usbCard = null, usbDev = null;
+
+        foreach (var line in listOutput.Split('\n'))
+        {
+            var m = AlsaCardDeviceLine.Match(line);
+            if (!m.Success)
+                continue;
+
+            var card = int.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture);
+            var dev = int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture);
+            firstCard ??= card;
+            firstDev ??= dev;
+
+            if (line.Contains("USB", StringComparison.OrdinalIgnoreCase))
+            {
+                usbCard = card;
+                usbDev = dev;
+            }
+        }
+
+        var c = usbCard ?? firstCard;
+        var d = usbDev ?? firstDev;
+        return c != null && d != null ? $"plughw:{c},{d}" : null;
     }
 
     public void SubscribeMic(string connectionId)

@@ -69,8 +69,13 @@
           </div>
         </div>
       </div>
-      <div class="telem-toggles" *ngIf="soundAvailable()">
-        <div class="telem-switch" [class.active]="sound.micStreamActive()" (click)="toggleMicStream()" title="Hear rover mic">
+      <div class="telem-toggles">
+        <div
+          class="telem-switch"
+          [class.active]="sound.micStreamActive()"
+          [class.telem-switch--unavailable]="!soundAvailable()"
+          [attr.title]="micToggleTitle()"
+          (click)="toggleMicStream()">
           <span class="switch-label">MIC</span>
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>
@@ -86,7 +91,12 @@
           <span class="switch-label">IR</span>
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>
-        <div class="telem-switch" *ngIf="soundAvailable()" [class.active]="sound.voiceToRoverActive()" (click)="toggleVoiceToRover()" title="Speak to rover">
+        <div
+          class="telem-switch"
+          [class.active]="sound.voiceToRoverActive()"
+          [class.telem-switch--unavailable]="!soundAvailable()"
+          [attr.title]="voiceToggleTitle()"
+          (click)="toggleVoiceToRover()">
           <span class="switch-label">VOICE</span>
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>

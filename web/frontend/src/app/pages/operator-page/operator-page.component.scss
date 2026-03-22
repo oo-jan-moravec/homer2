@@ -149,6 +149,35 @@ $border: #1f2937;
       }
     }
   }
+
+  &.telem-switch--unavailable {
+    cursor: not-allowed;
+    opacity: 0.42;
+    filter: grayscale(0.35);
+
+    &:hover {
+      border-color: $border;
+      .switch-track { border-color: $border; }
+    }
+
+    &.active {
+      border-color: $border;
+      box-shadow: none;
+      background: $bg-panel;
+
+      .switch-label { color: $fg-dim; font-weight: 500; }
+
+      .switch-track {
+        border-color: $border;
+        background: rgba(0, 0, 0, 0.4);
+
+        .switch-thumb {
+          transform: translateX(2px);
+          background: $fg-dim;
+        }
+      }
+    }
+  }
 }
 
 // ── Telem chips ───────────────────────────────────────────────────────────────

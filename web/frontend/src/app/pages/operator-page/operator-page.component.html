@@ -397,6 +397,25 @@
             <p class="ihint">restart stream to apply</p>
           </div>
 
+          <div
+            class="info-panel panel-interactive info-panel-shutdown"
+            *ngIf="remoteShutdownAvailable() === true"
+          >
+            <div class="ititle">POWER</div>
+            <p class="ihint">
+              Halt this host (<code>sudo shutdown -h now</code>). Requires sudoers on the Pi.
+            </p>
+            <button
+              type="button"
+              class="ibtn-shutdown"
+              [disabled]="shutdownRequesting()"
+              (click)="requestHostShutdown()"
+            >
+              {{ shutdownRequesting() ? "…" : "SHUT DOWN" }}
+            </button>
+            <p *ngIf="shutdownMessage()" class="shutdown-msg">{{ shutdownMessage() }}</p>
+          </div>
+
           <div class="info-panel debug-panel">
             <div class="ititle">DEBUG</div>
             <div class="irow">

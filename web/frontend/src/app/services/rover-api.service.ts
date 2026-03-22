@@ -157,4 +157,13 @@ export class RoverApiService {
   getSerialDebug(): Observable<SerialDebugSnapshot> {
     return this.http.get<SerialDebugSnapshot>(`${this.base}/serial-debug`);
   }
+
+  getRemoteShutdownAvailability(): Observable<{ enabled: boolean }> {
+    return this.http.get<{ enabled: boolean }>(`${this.base}/system/shutdown`);
+  }
+
+  /** Halt the rover host (Pi). Requires RemoteShutdownEnabled + sudoers on server. */
+  requestRemoteShutdown(): Observable<{ ok: boolean; message?: string }> {
+    return this.http.post<{ ok: boolean; message?: string }>(`${this.base}/system/shutdown`, {});
+  }
 }

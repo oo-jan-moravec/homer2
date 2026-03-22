@@ -720,6 +720,47 @@ $obst-alarm-cycle: 0.85s;
   &.dim { opacity: 0.65; font-style: italic; }
 }
 
+.info-panel-shutdown {
+  .ihint code {
+    font-size: 8px;
+    opacity: 0.85;
+    word-break: break-all;
+  }
+}
+
+.ibtn-shutdown {
+  margin-top: 0.35rem;
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  color: #fff;
+  background: #8b1532;
+  border: 1px solid #ff4466;
+
+  &:hover:not(:disabled) {
+    background: #a61a3d;
+    border-color: #ff6b85;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.shutdown-msg {
+  margin: 0.4rem 0 0 0;
+  font-size: 9px;
+  line-height: 1.35;
+  color: $fg;
+  opacity: 0.9;
+}
+
 .ibtns {
   display: flex;
   flex-wrap: wrap;

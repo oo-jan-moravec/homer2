@@ -1,5 +1,6 @@
 import { Component, effect, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { RoverApiService, RoverStatus, SystemInfo, TelemetryData, SerialDebugSnapshot, WifiSurvey, WifiApEntry } from '../../services/rover-api.service';
 import { RoverCameraStreamService } from '../../services/rover-camera-stream.service';
@@ -64,6 +65,11 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   serialDebug = signal<SerialDebugSnapshot | null>(null);
   wifiSurvey = signal<WifiSurvey | null>(null);
   wifiSurveyLoading = signal(false);
+
+  /** null until loaded; panel shown only when true (Linux Pi + RemoteShutdownEnabled). */
+  remoteShutdownAvailable = signal<boolean | null>(null);
+  shutdownRequesting = signal(false);
+  shutdownMessage = signal('');
 
   private systemInfoInterval?: ReturnType<typeof setInterval>;
   private debugInterval?: ReturnType<typeof setInterval>;
@@ -141,6 +147,10 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     this.systemInfoInterval = setInterval(() => this.refreshSystemInfo(), 30_000);
     this.api.getLcdAutoEnabled().subscribe({ next: r => this.lcdAutoEnabled = r.enabled, error: () => {} });
     this.api.getCameraQuality().subscribe({ next: r => this.videoQualityPreset = r.preset ?? '480p', error: () => {} });
+    this.api.getRemoteShutdownAvailability().subscribe({
+      next: r => this.remoteShutdownAvailable.set(!!r.enabled),
+      error: () => this.remoteShutdownAvailable.set(false)
+    });
     this.debugInterval = setInterval(() => {
       if (this.infoOverlayVisible()) this.refreshDebug();
     }, 1500);
@@ -295,6 +305,23 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     this.api.setCameraQuality(preset).subscribe({
       next: r => this.videoQualityPreset = r.preset,
       error: () => this.consoleMessage.set('Failed to set video quality')
+    });
+  }
+
+  requestHostShutdown() {
+    if (!globalThis.confirm('Shut down the rover (Raspberry Pi) now? This cannot be undone.')) return;
+    this.shutdownMessage.set('');
+    this.shutdownRequesting.set(true);
+    this.api.requestRemoteShutdown().subscribe({
+      next: () => {
+        this.shutdownRequesting.set(false);
+        this.shutdownMessage.set('Shutdown scheduled — host will power off shortly.');
+      },
+      error: (e: HttpErrorResponse) => {
+        this.shutdownRequesting.set(false);
+        const body = e.error as { error?: string } | undefined;
+        this.shutdownMessage.set(body?.error ?? e.message ?? 'Shutdown failed.');
+      }
     });
   }
 

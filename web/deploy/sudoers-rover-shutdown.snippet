@@ -1,0 +1,4 @@
+# Passwordless shutdown for the rover-operator-console service user (Pi).
+#   sudo visudo -f /etc/sudoers.d/rover-shutdown
+# Replace SERVICE_USER with the User= from rover-operator-console.service (e.g. hanzzo).
+SERVICE_USER ALL=(root) NOPASSWD: /sbin/shutdown

@@ -19,6 +19,7 @@ public class RoverController : ControllerBase
     private readonly ISystemInfoService _systemInfo;
     private readonly IWifiSurveyService _wifiSurvey;
     private readonly ILcdAutoUpdateService _lcdAutoUpdate;
+    private readonly ISystemPowerService _systemPower;
 
     public RoverController(
         IConfiguration config,
@@ -31,7 +32,8 @@ public class RoverController : ControllerBase
         IAudioStreamService audioStream,
         ISystemInfoService systemInfo,
         IWifiSurveyService wifiSurvey,
-        ILcdAutoUpdateService lcdAutoUpdate)
+        ILcdAutoUpdateService lcdAutoUpdate,
+        ISystemPowerService systemPower)
     {
         _config = config;
         _serial = serial;
@@ -44,6 +46,7 @@ public class RoverController : ControllerBase
         _systemInfo = systemInfo;
         _wifiSurvey = wifiSurvey;
         _lcdAutoUpdate = lcdAutoUpdate;
+        _systemPower = systemPower;
     }
 
     /// <summary>Host system info: IP, uptime, CPU temp, memory, etc.</summary>
@@ -51,6 +54,26 @@ public class RoverController : ControllerBase
     public IActionResult GetSystemInfo()
     {
         return Ok(_systemInfo.GetSystemInfo());
+    }
+
+    /// <summary>Whether POST <c>system/shutdown</c> is available (Linux Pi with config + sudoers).</summary>
+    [HttpGet("system/shutdown")]
+    public IActionResult GetShutdownAvailability()
+    {
+        return Ok(new { enabled = _systemPower.IsRemoteShutdownEnabled });
+    }
+
+    /// <summary>Halt the host immediately (<c>sudo shutdown -h now</c>). 202 if scheduled; 403 when disabled.</summary>
+    [HttpPost("system/shutdown")]
+    public IActionResult PostShutdown()
+    {
+        if (!_systemPower.IsRemoteShutdownEnabled)
+            return StatusCode(403, new { error = "Remote shutdown is not enabled on this server." });
+
+        if (!_systemPower.TryScheduleHalt(out var err))
+            return StatusCode(500, new { error = err ?? "Shutdown failed." });
+
+        return Accepted(new { ok = true, message = "Shutdown scheduled." });
     }
 
     /// <summary>

@@ -165,7 +165,100 @@ $border: #1f2937;
 
   .label { color: $fg-dim; letter-spacing: 0.1em; flex-shrink: 0; }
   .value { color: $fg; font-weight: 600; min-width: 6em; text-align: right; }
+  .value.telem-state-bad { color: $fg-dim; font-weight: 500; }
   .unit  { color: $fg-dim; font-size: 10px; flex-shrink: 0; }
+}
+
+$link-alarm: #ff3355;
+
+.telem-chip-link {
+  min-width: 5.75rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &.telem-chip-link--alarm {
+    border-color: $link-alarm;
+    box-shadow: 0 0 10px color.adjust($link-alarm, $alpha: -0.55);
+    animation: link-chip-alarm-pulse 0.7s ease-in-out infinite;
+  }
+
+  .link-led-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1;
+    justify-content: flex-end;
+    min-height: 1rem;
+  }
+
+  .link-led {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    border: 1px solid color.adjust($fg, $alpha: -0.35);
+    background: rgba(0, 0, 0, 0.35);
+    flex-shrink: 0;
+    transition: background 45ms ease-out, border-color 45ms ease-out, box-shadow 45ms ease-out;
+  }
+
+  .link-led--hot {
+    background: $fg;
+    border-color: $fg;
+    box-shadow: 0 0 7px color.adjust($fg, $alpha: -0.45);
+  }
+
+  .link-led--dead {
+    opacity: 0.32;
+    border-color: $fg-dim;
+    background: rgba(0, 0, 0, 0.2);
+    box-shadow: none;
+
+    &.link-led--hot {
+      background: rgba(0, 0, 0, 0.2);
+      border-color: $fg-dim;
+      box-shadow: none;
+    }
+  }
+
+  .link-led-row--alarm .link-led {
+    opacity: 1;
+    animation: link-led-alarm 0.45s ease-in-out infinite;
+    border-color: color.adjust($link-alarm, $alpha: -0.15);
+    background: rgba($link-alarm, 0.35);
+    box-shadow: none;
+
+    &.link-led--hot {
+      background: $link-alarm;
+      border-color: color.adjust($link-alarm, $lightness: 12%);
+      box-shadow: 0 0 8px color.adjust($link-alarm, $alpha: -0.35);
+    }
+  }
+}
+
+@keyframes link-led-alarm {
+  0%,
+  100% {
+    background: rgba($link-alarm, 0.2);
+    border-color: color.adjust($link-alarm, $alpha: -0.25);
+    box-shadow: 0 0 2px color.adjust($link-alarm, $alpha: -0.6);
+  }
+  50% {
+    background: $link-alarm;
+    border-color: color.adjust($link-alarm, $lightness: 15%);
+    box-shadow: 0 0 10px color.adjust($link-alarm, $alpha: -0.35);
+  }
+}
+
+@keyframes link-chip-alarm-pulse {
+  0%,
+  100% {
+    border-color: color.adjust($link-alarm, $alpha: -0.35);
+    box-shadow: 0 0 6px color.adjust($link-alarm, $alpha: -0.65);
+  }
+  50% {
+    border-color: $link-alarm;
+    box-shadow: 0 0 12px color.adjust($link-alarm, $alpha: -0.45);
+  }
 }
 
 .telem-bars {
@@ -209,9 +302,18 @@ $border: #1f2937;
   z-index: 10;
 
   .label { font-size: 10px; color: $fg-dim; letter-spacing: 0.15em; }
+
+  .joystick-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    max-width: min(100vw - 3rem, 14rem);
+    pointer-events: auto;
+  }
 }
 
-// ── INFO overlay: bordered tiles, no fill; flex-wrap so tiles flow to next row ─
+// ── INFO overlay: subtle fill, fixed tile width; flex-wrap for next row ───────
 
 .info-panels {
   pointer-events: none;
@@ -243,15 +345,15 @@ $border: #1f2937;
 
 .info-panel {
   position: relative;
-  flex: 0 1 auto;
-  background: transparent;
+  flex: 0 0 17rem;
+  width: 17rem;
+  max-width: 100%;
+  background: rgba(10, 10, 15, 0.28);
   border: 1px solid $fg;
   padding: 0.55rem 0.7rem;
   font-size: 11px;
   line-height: 1.55;
   box-sizing: border-box;
-  min-width: min(10.5rem, 100%);
-  max-width: min(17rem, 100%);
   color: $fg;
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 1px 2px rgba(0, 0, 0, 0.95);
 }
@@ -370,6 +472,16 @@ $border: #1f2937;
     margin-bottom: 0.4rem;
     font-size: 9.5px;
     line-height: 1.4;
+    min-height: 2.6rem;
+  }
+
+  .wifi-survey-body {
+    min-height: 11rem;
+    max-height: 11rem;
+    margin-top: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
   }
 
   .wifi-loading {
@@ -397,13 +509,13 @@ $border: #1f2937;
   }
 
   .wifi-ap-list {
-    max-height: 11rem;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
     gap: 3px;
-    margin-top: 0.25rem;
   }
 
   .wifi-ap-row {
@@ -444,7 +556,8 @@ $border: #1f2937;
   }
 
   .wifi-empty {
-    margin: 0.35rem 0 0 0;
+    margin: 0;
+    padding-top: 0.35rem;
     font-size: 9.5px;
     color: $fg;
     opacity: 0.8;

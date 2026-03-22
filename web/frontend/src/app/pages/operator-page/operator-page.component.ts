@@ -20,8 +20,14 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
   readonly wifiBarCount = [1, 2, 3, 4] as const;
 
   private api = inject(RoverApiService);
-  private signalr = inject(RoverSignalRService);
+  readonly signalr = inject(RoverSignalRService);
   sound = inject(SoundService);
+
+  /** Shown in SR LED tooltips (ws://…/hubs/…). */
+  readonly hubOrigin =
+    typeof globalThis !== 'undefined' && 'location' in globalThis && globalThis.location
+      ? globalThis.location.origin
+      : '';
 
   telemetry = this.signalr.telemetry;
   signalrConnected = this.signalr.connected;
@@ -161,8 +167,13 @@ export class OperatorPageComponent implements OnInit, OnDestroy {
     this.signalr.stopDrive();
   }
 
-  onStreamError() { this.camSrc.set(null); }
-  retryStream() { this.camSrc.set(this.api.getCameraStreamUrl()); }
+  onStreamError() {
+    this.camSrc.set(null);
+  }
+
+  retryStream() {
+    this.camSrc.set(this.api.getCameraStreamUrl());
+  }
 
   toggleIr() {
     this.api.toggleIr().subscribe({ next: r => this.applyIrState(r.on) });

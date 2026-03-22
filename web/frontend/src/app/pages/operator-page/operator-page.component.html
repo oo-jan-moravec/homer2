@@ -44,14 +44,46 @@
           <span class="value">{{ telemetry()?.pingMs != null ? telemetry()!.pingMs : '--' }}</span>
           <span class="unit">ms</span>
         </div>
+        <div
+          class="telem-chip telem-chip-link"
+          [class.telem-chip-link--alarm]="signalr.linkAlarm()"
+          [attr.title]="
+            signalr.linkAlarm()
+              ? (signalr.reconnecting()
+                  ? 'Reconnecting SignalR…'
+                  : 'SignalR fault (negotiate failed, connection lost, or retries exhausted)')
+              : 'Realtime link · drive ' + hubOrigin + '/hubs/drive · telemetry ' + hubOrigin + '/hubs/telemetry'
+          ">
+          <span class="label">LINK</span>
+          <div class="link-led-row" [class.link-led-row--alarm]="signalr.linkAlarm()">
+            <span
+              class="link-led"
+              [class.link-led--dead]="!signalrConnected()"
+              [attr.title]="'Drive hub — outbound invoke · ' + hubOrigin + '/hubs/drive'"
+              [class.link-led--hot]="signalrConnected() && signalr.driveTxLed()"></span>
+            <span
+              class="link-led"
+              [class.link-led--dead]="!signalrConnected()"
+              [attr.title]="'Telemetry hub — each push · ' + hubOrigin + '/hubs/telemetry'"
+              [class.link-led--hot]="signalrConnected() && signalr.telemetryRxLed()"></span>
+          </div>
+        </div>
       </div>
-      <div class="telem-toggles">
-        <div class="telem-switch" [class.active]="irOn()" (click)="toggleIr()" title="Toggle IR LED">
-          <span class="switch-label">IR</span>
+      <div class="telem-toggles" *ngIf="soundAvailable()">
+        <div class="telem-switch" [class.active]="sound.micStreamActive()" (click)="toggleMicStream()" title="Hear rover mic">
+          <span class="switch-label">MIC</span>
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>
-        <div class="telem-switch" *ngIf="soundAvailable()" [class.active]="sound.micStreamActive()" (click)="toggleMicStream()" title="Hear rover mic">
-          <span class="switch-label">MIC</span>
+      </div>
+    </div>
+
+    <!-- Joystick -->
+    <div class="joystick-overlay">
+      <span class="label">DRIVE</span>
+      <app-joystick (move)="onJoystickMove($event)" (stop)="onJoystickStop()"></app-joystick>
+      <div class="joystick-toggles">
+        <div class="telem-switch" [class.active]="irOn()" (click)="toggleIr()" title="Toggle IR LED">
+          <span class="switch-label">IR</span>
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>
         <div class="telem-switch" *ngIf="soundAvailable()" [class.active]="sound.voiceToRoverActive()" (click)="toggleVoiceToRover()" title="Speak to rover">
@@ -63,12 +95,6 @@
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </div>
       </div>
-    </div>
-
-    <!-- Joystick -->
-    <div class="joystick-overlay">
-      <span class="label">DRIVE</span>
-      <app-joystick (move)="onJoystickMove($event)" (stop)="onJoystickStop()"></app-joystick>
     </div>
 
     <!-- INFO: bordered tiles, flex-wrap over video -->
@@ -110,17 +136,19 @@
             <span *ngIf="ws.currentSsid" class="wifi-cur-ssid">assoc “{{ ws.currentSsid }}”</span>
           </ng-container>
         </div>
-        <div class="wifi-ap-list" *ngIf="wifiSurvey()?.accessPoints?.length">
-          <div
-            *ngFor="let ap of wifiSurvey()!.accessPoints"
-            class="wifi-ap-row"
-            [class.current]="isCurrentWifiAp(ap)"
-            [title]="wifiApTitle(ap)">
-            <span class="wifi-ap-ssid">{{ wifiApDisplaySsid(ap) }}</span>
-            <span class="wifi-ap-sig">{{ ap.signalDbm != null ? ap.signalDbm + ' dBm' : '—' }}</span>
+        <div class="wifi-survey-body">
+          <div class="wifi-ap-list" *ngIf="wifiSurvey()?.accessPoints?.length">
+            <div
+              *ngFor="let ap of wifiSurvey()!.accessPoints"
+              class="wifi-ap-row"
+              [class.current]="isCurrentWifiAp(ap)"
+              [title]="wifiApTitle(ap)">
+              <span class="wifi-ap-ssid">{{ wifiApDisplaySsid(ap) }}</span>
+              <span class="wifi-ap-sig">{{ ap.signalDbm != null ? ap.signalDbm + ' dBm' : '—' }}</span>
+            </div>
           </div>
+          <p *ngIf="!wifiSurveyLoading() && wifiSurvey() && !wifiSurvey()!.error && !(wifiSurvey()!.accessPoints?.length)" class="wifi-empty">No access points</p>
         </div>
-        <p *ngIf="!wifiSurveyLoading() && wifiSurvey() && !wifiSurvey()!.error && !(wifiSurvey()!.accessPoints?.length)" class="wifi-empty">No access points</p>
       </div>
 
       <div class="info-panel panel-interactive">

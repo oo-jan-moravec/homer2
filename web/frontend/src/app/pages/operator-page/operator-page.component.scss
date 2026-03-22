@@ -83,7 +83,7 @@ $border: #1f2937;
 
 .telem-chips {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
 }
 
@@ -156,15 +156,15 @@ $border: #1f2937;
 .telem-chip {
   background: $bg-panel;
   border: 1px solid $border;
-  padding: 0.4rem 0.75rem;
+  padding: 0.3rem 0.45rem;
   font-size: 11px;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  min-width: 7.5rem;
+  gap: 0.28rem;
+  min-width: 0;
 
-  .label { color: $fg-dim; letter-spacing: 0.1em; flex-shrink: 0; }
-  .value { color: $fg; font-weight: 600; min-width: 6em; text-align: right; }
+  .label { color: $fg-dim; letter-spacing: 0.08em; flex-shrink: 0; }
+  .value { color: $fg; font-weight: 600; min-width: 4ch; text-align: right; font-variant-numeric: tabular-nums; }
   .value.telem-state-bad { color: $fg-dim; font-weight: 500; }
   .unit  { color: $fg-dim; font-size: 10px; flex-shrink: 0; }
 }
@@ -172,7 +172,7 @@ $border: #1f2937;
 $link-alarm: #ff3355;
 
 .telem-chip-link {
-  min-width: 5.75rem;
+  min-width: 0;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   &.telem-chip-link--alarm {

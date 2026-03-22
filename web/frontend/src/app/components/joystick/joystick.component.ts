@@ -113,6 +113,14 @@ export class JoystickComponent implements AfterViewInit, OnDestroy {
     this.stickMaxPx.set(Math.max(24, r / 2 - 30));
   }
 
+  /** ±10° around east/west drive bearing so slight drift stays a full 90° / 270° turn. */
+  private snapTurnDeadZone(bearing: number): number {
+    const b = ((bearing % 360) + 360) % 360;
+    if (b >= 80 && b <= 100) return 90;
+    if (b >= 260 && b <= 280) return 270;
+    return b;
+  }
+
   private update(e: PointerEvent) {
     this.readGeometry();
     const dx = e.clientX - this.center.x;
@@ -125,7 +133,9 @@ export class JoystickComponent implements AfterViewInit, OnDestroy {
 
     // Math coords: 0°=right, 90°=up. Rover expects: 0°=forward(up), 90°=right, 180°=back, 270°=left
     const raw = (Math.atan2(-y, x) * 180 / Math.PI + 360) % 360;
-    const bearing = Math.round((450 - raw) % 360);
+    let bearing = Math.round((450 - raw) % 360);
+    bearing = ((bearing % 360) + 360) % 360;
+    bearing = this.snapTurnDeadZone(bearing);
     const velocity = Math.round(clamped * 9);
     this.move.emit({ bearing, velocity });
   }
